@@ -1,0 +1,77 @@
+{
+  "version": "1.0",
+  "profiles": [
+    {
+      "name": "aws",
+      "regions": [
+        {
+          "name": "us-east-1",
+          "services": [
+            {
+              "name": "lambda",
+              "resourcetypes": [
+                {
+                  "name": "function",
+                  "arns": [
+                    "arn:aws:lambda:us-east-1:123412341234:function:myFunc",
+                    "arn:aws:lambda:us-east-1:123412341234:function:yourFunc"
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "stepfunctions",
+              "resourcetypes": [
+                {
+                  "name": "activity",
+                  "arns": [
+                    "arn:aws:states:us-east-1:123412341234:activity:activity1",
+                    "arn:aws:states:us-east-1:123412341234:activity:activity2"
+                  ]
+                },
+                {
+                  "name": "statemachine",
+                  "arns": [
+                    "arn:aws:states:us-east-1:123412341234:stateMachine:stateMachine1",
+                    "arn:aws:states:us-east-1:123412341234:stateMachine:stateMachine2",
+                    "arn:aws:states:us-east-1:123412341234:stateMachine:stateMachine3"
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "ap-southeast-2",
+          "services": [
+            {
+              "name": "dynamodb",
+              "resourcetypes": [
+                {
+                  "name": "table",
+                  "arns": [
+                    "arn:aws:dynamodb:ap-southeast-2:123412341234:table/myTable1",
+                    "arn:aws:dynamodb:ap-southeast-2:123412341234:table/myTable2"
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "sns",
+              "resourcetypes": [
+                {
+                  "name": "topic",
+                  "arns": [
+                    "arn:aws:sns:ap-southeast-2:123412341234:myTopic1",
+                    "arn:aws:sns:ap-southeast-2:123412341234:myTopic2",
+                    "arn:aws:sns:ap-southeast-2:123412341234:myTopic3"
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

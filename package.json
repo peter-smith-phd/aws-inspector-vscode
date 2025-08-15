@@ -75,6 +75,7 @@
     "typescript": "^5.9.2"
   },
   "dependencies": {
-    "@aws-sdk/client-account": "^3.864.0"
+    "@aws-sdk/client-account": "^3.864.0",
+    "zod": "^4.0.17"
   }
 }

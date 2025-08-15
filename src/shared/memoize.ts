@@ -1,0 +1,21 @@
+/**
+ * Memoizes a function's results based on its arguments.
+ * 
+ * @param func The function to memoize.
+ * @returns A memoized version of the function.
+ */
+export function memoize<T extends (...args: any[]) => any>(func: T): T {
+  const cache = new Map<string, ReturnType<T>>();
+
+  return function(...args: Parameters<T>): ReturnType<T> {
+    const key = JSON.stringify(args); // Create a unique key from arguments
+
+    if (cache.has(key)) {
+      return cache.get(key)!;
+    }
+
+    const result = func(...args);
+    cache.set(key, result);
+    return result;
+  } as T;
+}

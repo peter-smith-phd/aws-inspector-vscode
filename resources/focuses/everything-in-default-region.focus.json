@@ -1,0 +1,26 @@
+{
+  "version": "1.0",
+  "profiles": [
+    {
+      "name": "default",
+      "regions": [
+        {
+          "name": "default",
+          "services": [
+            {
+              "name": "*",
+              "resourcetypes": [
+                {
+                  "name": "*",
+                  "arns": [
+                    "*"
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -3,7 +3,8 @@
     "files.exclude": {
         "dist": true,
         "node_modules": true,
-        "out": false
+        "out": true,
+        ".vscode-test": true,
     },
     "search.exclude": {
         "out": true, // set this to false to include "out" folder in search results
