@@ -2,16 +2,16 @@
   "version": "1.0",
   "profiles": [
     {
-      "name": "default",
+      "id": "default",
       "regions": [
         {
-          "name": "*",
+          "id": "*",
           "services": [
             {
-              "name": "*",
+              "id": "*",
               "resourcetypes": [
                 {
-                  "name": "*",
+                  "id": "*",
                   "arns": [
                     "*"
                   ]

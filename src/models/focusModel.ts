@@ -10,28 +10,28 @@ import { InternalError } from '../shared/errors';
 import { memoize } from '../shared/memoize';
 
 const ResourceTypeFocus = z.object({
-  name: z.string(),
+  id: z.string(),
   get arns() {
     return z.array(z.string());
   }
 });
 
 const ServiceFocus = z.object({
-  name: z.string(),
+  id: z.string(),
   get resourcetypes() {
     return z.array(ResourceTypeFocus);
   }
 });
 
 const RegionFocus = z.object({
-  name: z.string(),
+  id: z.string(),
   get services() {
     return z.array(ServiceFocus);
   }
 });
 
 const ProfileFocus = z.object({
-  name: z.string(),
+  id: z.string(),
   get regions() {
     return z.array(RegionFocus);
   }
@@ -44,9 +44,11 @@ export const Focus = z.object({
   }
 });
 
-export type RegionFocus = z.infer<typeof RegionFocus>;
-export type ProfileFocus = z.infer<typeof ProfileFocus>;
 export type Focus = z.infer<typeof Focus>;
+export type ProfileFocus = z.infer<typeof ProfileFocus>;
+export type RegionFocus = z.infer<typeof RegionFocus>;
+export type ServiceFocus = z.infer<typeof ServiceFocus>;
+export type ResourceTypeFocus = z.infer<typeof ResourceTypeFocus>;
 
 /**
  * Standard focuses that are always available by default,

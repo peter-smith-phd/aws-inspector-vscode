@@ -16,30 +16,30 @@ suite('CDK Deployment 1 focus model', () => {
 
   test('Has the aws profile', () => {
     assert.strictEqual(f.profiles.length, 1);
-    assert.strictEqual(f.profiles[0].name, 'aws');
+    assert.strictEqual(f.profiles[0].id, 'aws');
   });
 
   test('Has two regions', () => {
     const regions: RegionFocus[] = f.profiles[0].regions;
     
     assert.strictEqual(regions.length, 2);
-    assert.strictEqual(regions[0].name, "us-east-1");
-    assert.strictEqual(regions[1].name, "ap-southeast-2");
+    assert.strictEqual(regions[0].id, "us-east-1");
+    assert.strictEqual(regions[1].id, "ap-southeast-2");
   });
 
   test('Has us-east-1 region with two services', () => {
     const usEast1 = f.profiles[0].regions[0];
 
     assert.strictEqual(usEast1.services.length, 2);
-    assert.strictEqual(usEast1.services[0].name, "lambda");
-    assert.strictEqual(usEast1.services[1].name, "stepfunctions");
+    assert.strictEqual(usEast1.services[0].id, "lambda");
+    assert.strictEqual(usEast1.services[1].id, "stepfunctions");
   });
 
   test('Has us-east-1 lambda service with one resource type', () => {
     const lambdaService = f.profiles[0].regions[0].services[0];
 
     assert.strictEqual(lambdaService.resourcetypes.length, 1);
-    assert.strictEqual(lambdaService.resourcetypes[0].name, "function");
+    assert.strictEqual(lambdaService.resourcetypes[0].id, "function");
   });
 
   test('Has us-east-1 lambda function ARNs', () => {
@@ -53,8 +53,8 @@ suite('CDK Deployment 1 focus model', () => {
     const stepFunctionsService = f.profiles[0].regions[0].services[1];
 
     assert.strictEqual(stepFunctionsService.resourcetypes.length, 2);
-    assert.strictEqual(stepFunctionsService.resourcetypes[0].name, "activity");
-    assert.strictEqual(stepFunctionsService.resourcetypes[1].name, "statemachine");
+    assert.strictEqual(stepFunctionsService.resourcetypes[0].id, "activity");
+    assert.strictEqual(stepFunctionsService.resourcetypes[1].id, "statemachine");
   });
 
   test('Has us-east-1 stepfunctions activity ARNs', () => {
@@ -78,15 +78,15 @@ suite('CDK Deployment 1 focus model', () => {
     const apSoutheast2 = f.profiles[0].regions[1];
 
     assert.strictEqual(apSoutheast2.services.length, 2);
-    assert.strictEqual(apSoutheast2.services[0].name, "dynamodb");
-    assert.strictEqual(apSoutheast2.services[1].name, "sns");
+    assert.strictEqual(apSoutheast2.services[0].id, "dynamodb");
+    assert.strictEqual(apSoutheast2.services[1].id, "sns");
   });
 
   test('Has ap-southeast-2 dynamodb service with one resource type', () => {
     const dynamodbService = f.profiles[0].regions[1].services[0];
 
     assert.strictEqual(dynamodbService.resourcetypes.length, 1);
-    assert.strictEqual(dynamodbService.resourcetypes[0].name, "table");
+    assert.strictEqual(dynamodbService.resourcetypes[0].id, "table");
   });
 
   test('Has ap-southeast-2 dynamodb table ARNs', () => {
@@ -101,7 +101,7 @@ suite('CDK Deployment 1 focus model', () => {
     const snsService = f.profiles[0].regions[1].services[1];
 
     assert.strictEqual(snsService.resourcetypes.length, 1);
-    assert.strictEqual(snsService.resourcetypes[0].name, "topic");
+    assert.strictEqual(snsService.resourcetypes[0].id, "topic");
   });
 
   test('Has ap-southeast-2 sns topic ARNs', () => {

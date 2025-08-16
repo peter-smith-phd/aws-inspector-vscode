@@ -14,13 +14,13 @@ suite('Everything in default profile focus model', () => {
 
   test('Has a single default profile', () => {
     assert.strictEqual(f.profiles.length, 1);
-    assert.strictEqual(f.profiles[0].name, 'default');
+    assert.strictEqual(f.profiles[0].id, 'default');
   });
 
   test('Has a single region entry with a default name', () => {
     const regions: RegionFocus[] = f.profiles[0].regions;
     
     assert.strictEqual(regions.length, 1);
-    assert.strictEqual(regions[0].name, "default");
+    assert.strictEqual(regions[0].id, "default");
   });
 });

@@ -14,28 +14,28 @@ suite('Everything in default profile focus model', () => {
 
   test('Has a single default profile', () => {
     assert.strictEqual(f.profiles.length, 1);
-    assert.strictEqual(f.profiles[0].name, 'default');
+    assert.strictEqual(f.profiles[0].id, 'default');
   });
 
   test('Has a single region entry with a wildcard name', () => {
     const regions: RegionFocus[] = f.profiles[0].regions;
     
     assert.strictEqual(regions.length, 1);
-    assert.strictEqual(regions[0].name, "*");
+    assert.strictEqual(regions[0].id, "*");
   });
 
   test('Has a single service entry with a wildcard name', () => {
     const services = f.profiles[0].regions[0].services;
 
     assert.strictEqual(services.length, 1);
-    assert.strictEqual(services[0].name, "*");
+    assert.strictEqual(services[0].id, "*");
   });
 
   test('Has a single resource type entry with a wildcard name', () => {
     const resourceTypes = f.profiles[0].regions[0].services[0].resourcetypes;
 
     assert.strictEqual(resourceTypes.length, 1);
-    assert.strictEqual(resourceTypes[0].name, "*");
+    assert.strictEqual(resourceTypes[0].id, "*");
   });
 
   test('Has a single resource entry with a wildcard ARN', () => {

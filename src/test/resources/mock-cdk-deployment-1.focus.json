@@ -2,16 +2,16 @@
   "version": "1.0",
   "profiles": [
     {
-      "name": "aws",
+      "id": "aws",
       "regions": [
         {
-          "name": "us-east-1",
+          "id": "us-east-1",
           "services": [
             {
-              "name": "lambda",
+              "id": "lambda",
               "resourcetypes": [
                 {
-                  "name": "function",
+                  "id": "function",
                   "arns": [
                     "arn:aws:lambda:us-east-1:123412341234:function:myFunc",
                     "arn:aws:lambda:us-east-1:123412341234:function:yourFunc"
@@ -20,17 +20,17 @@
               ]
             },
             {
-              "name": "stepfunctions",
+              "id": "stepfunctions",
               "resourcetypes": [
                 {
-                  "name": "activity",
+                  "id": "activity",
                   "arns": [
                     "arn:aws:states:us-east-1:123412341234:activity:activity1",
                     "arn:aws:states:us-east-1:123412341234:activity:activity2"
                   ]
                 },
                 {
-                  "name": "statemachine",
+                  "id": "statemachine",
                   "arns": [
                     "arn:aws:states:us-east-1:123412341234:stateMachine:stateMachine1",
                     "arn:aws:states:us-east-1:123412341234:stateMachine:stateMachine2",
@@ -42,13 +42,13 @@
           ]
         },
         {
-          "name": "ap-southeast-2",
+          "id": "ap-southeast-2",
           "services": [
             {
-              "name": "dynamodb",
+              "id": "dynamodb",
               "resourcetypes": [
                 {
-                  "name": "table",
+                  "id": "table",
                   "arns": [
                     "arn:aws:dynamodb:ap-southeast-2:123412341234:table/myTable1",
                     "arn:aws:dynamodb:ap-southeast-2:123412341234:table/myTable2"
@@ -57,10 +57,10 @@
               ]
             },
             {
-              "name": "sns",
+              "id": "sns",
               "resourcetypes": [
                 {
-                  "name": "topic",
+                  "id": "topic",
                   "arns": [
                     "arn:aws:sns:ap-southeast-2:123412341234:myTopic1",
                     "arn:aws:sns:ap-southeast-2:123412341234:myTopic2",

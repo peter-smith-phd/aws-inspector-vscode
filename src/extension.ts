@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
-import { ResourceViewProvider } from './views/resourcesView/resourcesViewProvider';
-import { FocusViewProvider } from './views/focusView/focusViewProvider';
-import { ResourceDetailsViewProvider } from './views/resourceDetailsView/resourceDetailsViewProvider';
+import { ResourceViewProvider } from './views/resourcesView/viewProvider';
+import { FocusViewProvider } from './views/focusView/viewProvider';
+import { ResourceDetailsViewProvider } from './views/resourceDetailsView/viewProvider';
 import { Account } from './awsClients/account';
 
 /**
@@ -10,7 +10,7 @@ import { Account } from './awsClients/account';
  */
 export function activate(context: vscode.ExtensionContext) {
 	const disposable = [
-		...registerViews(),
+		...registerViews(context),
 		...registerCommands()
 	];
 	context.subscriptions.push(...disposable);
@@ -19,10 +19,10 @@ export function activate(context: vscode.ExtensionContext) {
 /**
  * Register the VS Code views for the AWS Inspector extension.
  */
-function registerViews() {
+function registerViews(context: vscode.ExtensionContext) {
 	return [
 		vscode.window.registerTreeDataProvider('aws-inspector.focus', new FocusViewProvider()),
-		vscode.window.registerTreeDataProvider('aws-inspector.resources', new ResourceViewProvider()),
+		vscode.window.registerTreeDataProvider('aws-inspector.resources', new ResourceViewProvider(context)),
 		vscode.window.registerTreeDataProvider('aws-inspector.resource-details', new ResourceDetailsViewProvider()),
 	];
 }
