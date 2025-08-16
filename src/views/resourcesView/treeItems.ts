@@ -5,7 +5,12 @@ import { ProfileFocus, RegionFocus, ResourceTypeFocus, ServiceFocus } from '../.
  * The top-level class for any TreeItem in the Resources View
  */
 export class ResourceTreeItem extends vscode.TreeItem {
-    constructor(public readonly label: string, state?: vscode.TreeItemCollapsibleState) {
+    public readonly parent: ResourceTreeItem | undefined;
+    
+    constructor(
+        public readonly label: string, 
+        state?: vscode.TreeItemCollapsibleState
+    ) {
         super(label, state);
     }
 }
@@ -32,6 +37,7 @@ export class ResourceProfileTreeItem extends ResourceTreeItem {
  */
 export class ResourceRegionTreeItem extends ResourceTreeItem {
     constructor(
+        public readonly parent: ResourceProfileTreeItem,
         public readonly region: RegionFocus,
         public readonly locationName: string
     ) {
@@ -45,6 +51,7 @@ export class ResourceRegionTreeItem extends ResourceTreeItem {
  */
 export class ResourceServiceTreeItem extends ResourceTreeItem {
     constructor(
+        public readonly parent: ResourceRegionTreeItem,
         public readonly service: ServiceFocus,
         public readonly name: string
     ) {
@@ -57,6 +64,7 @@ export class ResourceServiceTreeItem extends ResourceTreeItem {
  */
 export class ResourceTypeTreeItem extends ResourceTreeItem {
     constructor(
+        public readonly parent: ResourceServiceTreeItem,
         public readonly resourceType: ResourceTypeFocus,
         public readonly name: string
     ) {
@@ -69,6 +77,7 @@ export class ResourceTypeTreeItem extends ResourceTreeItem {
  */
 export class ResourceArnTreeItem extends ResourceTreeItem {
     constructor(
+        public readonly parent: ResourceTypeTreeItem,
         public readonly arn: string,
         public readonly name: string,
         public readonly tooltip: string,

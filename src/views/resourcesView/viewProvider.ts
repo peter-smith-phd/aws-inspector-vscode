@@ -3,6 +3,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { ResourceArnTreeItem, ResourceProfileTreeItem, ResourceRegionTreeItem, ResourceServiceTreeItem, ResourceTreeItem, ResourceTypeTreeItem } from './treeItems';
 import { Focus, ProfileFocus, RegionFocus, ResourceTypeFocus, ServiceFocus } from '../../models/focusModel';
+import { getIconForService } from '../../shared/icons';
 
 /**
  * Provider for a view that shows all the profile/region/service/resource information
@@ -28,13 +29,13 @@ export class ResourceViewProvider implements vscode.TreeDataProvider<ResourceTre
         if (!element) {
             return this.makeResourceProfiles(this.focus);
         } else if (element instanceof ResourceProfileTreeItem) {
-            return this.makeResourceRegions(element.profile);
+            return this.makeResourceRegions(element);
         } else if (element instanceof ResourceRegionTreeItem) {
-            return this.makeResourceServices(element.region);
+            return this.makeResourceServices(element);
         } else if (element instanceof ResourceServiceTreeItem) {
-            return this.makeResourceTypes(element.service);
+            return this.makeResourceTypes(element);
         } else if (element instanceof ResourceTypeTreeItem) {
-            return this.makeResourceArns(element.resourceType);
+            return this.makeResourceArns(element);
         }
         return Promise.resolve([]);
     }
@@ -60,46 +61,46 @@ export class ResourceViewProvider implements vscode.TreeDataProvider<ResourceTre
     /**
      * Create ResourceRegionTreeItems from the regions in the profile.
      */
-    private makeResourceRegions(profile: ProfileFocus): vscode.ProviderResult<ResourceTreeItem[]> {
-        return Promise.all(profile.regions.map(async region => {
-            return new ResourceRegionTreeItem(region, 'Location Name');
+    private makeResourceRegions(parent: ResourceProfileTreeItem): vscode.ProviderResult<ResourceTreeItem[]> {
+        return Promise.all(parent.profile.regions.map(async region => {
+            return new ResourceRegionTreeItem(parent, region, 'Location Name');
         }));
     }
 
     /**
      * Create ResourceServiceTreeItems from the services in the region.
      */
-    private makeResourceServices(region: RegionFocus): vscode.ProviderResult<ResourceTreeItem[]> {
-        return Promise.all(region.services.map(async service => {
+    private makeResourceServices(parent: ResourceRegionTreeItem): vscode.ProviderResult<ResourceTreeItem[]> {
+        return Promise.all(parent.region.services.map(async service => {
             // TODO: use the human-readable name for this service.
             const name = service.id;
-            return new ResourceServiceTreeItem(service, name);
+            return new ResourceServiceTreeItem(parent, service, name);
         }));
     }
 
     /**
      * Create ResourceTypeTreeItems from the resource types in the service.
      */
-    private makeResourceTypes(service: ServiceFocus): vscode.ProviderResult<ResourceTreeItem[]> {
-        return Promise.all(service.resourcetypes.map(async resourceType => {
+    private makeResourceTypes(parent: ResourceServiceTreeItem): vscode.ProviderResult<ResourceTreeItem[]> {
+        return Promise.all(parent.service.resourcetypes.map(async resourcetype => {
             // TODO: use the human-readable name for this resource type.
-            const name = resourceType.id;
-            return new ResourceTypeTreeItem(resourceType, name);
+            const name = resourcetype.id;
+            return new ResourceTypeTreeItem(parent, resourcetype, name);
         }));
     }
 
     /**
      * Create ResourceArnTreeItems from the ARNs in the resource type.
      */
-    private makeResourceArns(resourceType: ResourceTypeFocus): vscode.ProviderResult<ResourceTreeItem[]> {
-        return Promise.all(resourceType.arns.map(async arn => {
+    private makeResourceArns(parent: ResourceTypeTreeItem): vscode.ProviderResult<ResourceTreeItem[]> {
+        return Promise.all(parent.resourceType.arns.map(async arn => {
             // TODO: extract the short name for this resource.
             const name = arn;
             // TODO: compute the correct icon for this resource
-            const iconPath = path.join(this.context.extensionPath, 'resources', 'icons', 'services', 'stepfunctions.svg');
+            const iconPath = getIconForService(this.context, parent.parent.service.id);
             // TODO: add a tooltip for this resource
             const tooltip = 'Step Functions State Machine';
-            return new ResourceArnTreeItem(arn, name, tooltip, iconPath);
+            return new ResourceArnTreeItem(parent, arn, name, tooltip, iconPath);
         }));
     }
 }
