@@ -32,7 +32,7 @@ suite('CDK Deployment 1 focus model', () => {
 
     assert.strictEqual(usEast1.services.length, 2);
     assert.strictEqual(usEast1.services[0].id, "lambda");
-    assert.strictEqual(usEast1.services[1].id, "stepfunctions");
+    assert.strictEqual(usEast1.services[1].id, "states");
   });
 
   test('Has us-east-1 lambda service with one resource type', () => {
@@ -49,15 +49,15 @@ suite('CDK Deployment 1 focus model', () => {
     assert.strictEqual(lambdaArns[1], "arn:aws:lambda:us-east-1:123412341234:function:yourFunc");
   });
 
-  test('Has us-east-1 stepfunctions service with two resource types', () => {
-    const stepFunctionsService = f.profiles[0].regions[0].services[1];
+  test('Has us-east-1 states service with two resource types', () => {
+    const statesService = f.profiles[0].regions[0].services[1];
 
-    assert.strictEqual(stepFunctionsService.resourcetypes.length, 2);
-    assert.strictEqual(stepFunctionsService.resourcetypes[0].id, "activity");
-    assert.strictEqual(stepFunctionsService.resourcetypes[1].id, "statemachine");
+    assert.strictEqual(statesService.resourcetypes.length, 2);
+    assert.strictEqual(statesService.resourcetypes[0].id, "activity");
+    assert.strictEqual(statesService.resourcetypes[1].id, "statemachine");
   });
 
-  test('Has us-east-1 stepfunctions activity ARNs', () => {
+  test('Has us-east-1 states activity ARNs', () => {
     const activityArns = f.profiles[0].regions[0].services[1].resourcetypes[0].arns;
 
     assert.strictEqual(activityArns.length, 2);
@@ -65,7 +65,7 @@ suite('CDK Deployment 1 focus model', () => {
     assert.strictEqual(activityArns[1], "arn:aws:states:us-east-1:123412341234:activity:activity2");
   });
 
-  test('Has us-east-1 stepfunctions statemachine ARNs', () => {
+  test('Has us-east-1 states statemachine ARNs', () => {
     const stateMachineArns = f.profiles[0].regions[0].services[1].resourcetypes[1].arns;
 
     assert.strictEqual(stateMachineArns.length, 3);

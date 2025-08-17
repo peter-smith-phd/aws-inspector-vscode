@@ -2,8 +2,9 @@ import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
 import { ResourceArnTreeItem, ResourceProfileTreeItem, ResourceRegionTreeItem, ResourceServiceTreeItem, ResourceTreeItem, ResourceTypeTreeItem } from './treeItems';
-import { Focus, ProfileFocus, RegionFocus, ResourceTypeFocus, ServiceFocus } from '../../models/focusModel';
+import { Focus } from '../../models/focusModel';
 import { getIconForService } from '../../shared/icons';
+import { getProviderForService } from '../../services/providers';
 
 /**
  * Provider for a view that shows all the profile/region/service/resource information
@@ -72,9 +73,8 @@ export class ResourceViewProvider implements vscode.TreeDataProvider<ResourceTre
      */
     private makeResourceServices(parent: ResourceRegionTreeItem): vscode.ProviderResult<ResourceTreeItem[]> {
         return Promise.all(parent.region.services.map(async service => {
-            // TODO: use the human-readable name for this service.
-            const name = service.id;
-            return new ResourceServiceTreeItem(parent, service, name);
+            const provider = getProviderForService(service.id);
+            return new ResourceServiceTreeItem(parent, service, provider.getName());
         }));
     }
 

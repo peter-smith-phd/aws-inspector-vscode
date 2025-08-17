@@ -5,12 +5,7 @@ import { ProfileFocus, RegionFocus, ResourceTypeFocus, ServiceFocus } from '../.
  * The top-level class for any TreeItem in the Resources View
  */
 export class ResourceTreeItem extends vscode.TreeItem {
-    public readonly parent: ResourceTreeItem | undefined;
-    
-    constructor(
-        public readonly label: string, 
-        state?: vscode.TreeItemCollapsibleState
-    ) {
+    constructor(public readonly label: string, state?: vscode.TreeItemCollapsibleState) {
         super(label, state);
     }
 }
