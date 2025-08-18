@@ -23,7 +23,7 @@
         {
           "id": "aws-inspector-view-container",
           "title": "AWS Inspector",
-          "icon": "$(zap)"
+          "icon": "resources/icons/aws-inspector.svg"
         }
       ]
     },
@@ -32,17 +32,17 @@
         {
           "id": "aws-inspector.focus",
           "name": "Focus",
-          "icon": "$(zap)"
+          "icon": "resources/icons/aws-inspector.svg"
         },
         {
           "id": "aws-inspector.resources",
           "name": "Resources",
-          "icon": "$(zap)"
+          "icon": "resources/icons/aws-inspector.svg"
         },
         {
           "id": "aws-inspector.resource-details",
           "name": "Resource Details",
-          "icon": "$(zap)"
+          "icon": "resources/icons/aws-inspector.svg"
         }
       ]
     }
