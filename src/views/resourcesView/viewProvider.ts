@@ -3,8 +3,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { ResourceArnTreeItem, ResourceProfileTreeItem, ResourceRegionTreeItem, ResourceServiceTreeItem, ResourceTreeItem, ResourceTypeTreeItem } from './treeItems';
 import { Focus } from '../../models/focusModel';
-import { getIconForService } from '../../shared/icons';
-import { getProviderForService } from '../../services/providers';
+import { ProviderFactory } from '../../services/providerFactory';
 
 /**
  * Provider for a view that shows all the profile/region/service/resource information
@@ -73,8 +72,8 @@ export class ResourceViewProvider implements vscode.TreeDataProvider<ResourceTre
      */
     private makeResourceServices(parent: ResourceRegionTreeItem): vscode.ProviderResult<ResourceTreeItem[]> {
         return Promise.all(parent.region.services.map(async service => {
-            const provider = getProviderForService(service.id);
-            return new ResourceServiceTreeItem(parent, service, provider.getName());
+            const provider = ProviderFactory.getProviderForService(service.id);
+            return new ResourceServiceTreeItem(parent, service, provider, provider.getName());
         }));
     }
 
@@ -82,10 +81,10 @@ export class ResourceViewProvider implements vscode.TreeDataProvider<ResourceTre
      * Create ResourceTypeTreeItems from the resource types in the service.
      */
     private makeResourceTypes(parent: ResourceServiceTreeItem): vscode.ProviderResult<ResourceTreeItem[]> {
+        const serviceProvider = parent.provider;
         return Promise.all(parent.service.resourcetypes.map(async resourcetype => {
-            // TODO: use the human-readable name for this resource type.
-            const name = resourcetype.id;
-            return new ResourceTypeTreeItem(parent, resourcetype, name);
+            const [_, pluralName] = serviceProvider.getResourceTypeNames(resourcetype.id);
+            return new ResourceTypeTreeItem(parent, resourcetype, pluralName);
         }));
     }
 
@@ -93,14 +92,19 @@ export class ResourceViewProvider implements vscode.TreeDataProvider<ResourceTre
      * Create ResourceArnTreeItems from the ARNs in the resource type.
      */
     private makeResourceArns(parent: ResourceTypeTreeItem): vscode.ProviderResult<ResourceTreeItem[]> {
+        const serviceProvider = parent.parent.provider;
+        const serviceName = serviceProvider.getName();
+        const serviceIconPath = serviceProvider.getIconPath(serviceProvider.getId());
+        const [singularName, _] = serviceProvider.getResourceTypeNames(parent.resourceType.id);
+
         return Promise.all(parent.resourceType.arns.map(async arn => {
             // TODO: extract the short name for this resource.
             const name = arn;
-            // TODO: compute the correct icon for this resource
-            const iconPath = getIconForService(this.context, parent.parent.service.id);
-            // TODO: add a tooltip for this resource
-            const tooltip = 'Step Functions State Machine';
-            return new ResourceArnTreeItem(parent, arn, name, tooltip, iconPath);
+
+            /* Tooltip has form: <Service Name> <Resource Type Name> */
+            const tooltip = `${serviceName} ${singularName}`;
+
+            return new ResourceArnTreeItem(parent, arn, name, tooltip, serviceIconPath);
         }));
     }
 }

@@ -1,13 +1,42 @@
+import { InternalError } from "../shared/errors";
+import * as vscode from 'vscode';
+import * as path from 'path';
+
 /**
  * Abstract parent class for all service providers.
  */
 export abstract class ServiceProvider {
 
+  constructor(
+    private readonly context: vscode.ExtensionContext
+  ) {
+    /* empty */
+  }
+
+  /** 
+   * Map of the provider's resource types to their human-facing names [singular, plural].
+   * Must be overidden by subclasses
+   */
+  protected abstract resourceTypes: Record<string, [string, string]>;
+
+  /** Provide the ID of the AWS service managed by this provider */
+  abstract getId(): string;
+
   /** return the human-readable name of this AWS service. */
   abstract getName(): string;
 
+  /** return the resource type names [singular, plural] for this AWS service */
+  public getResourceTypeNames(resourceType: string): string[] {
+    const resourceTypeNames = this.resourceTypes[resourceType];
+    if (!resourceTypeNames) {
+      throw new InternalError(`Unknown resource type: ${resourceType}`);
+    }
+    return resourceTypeNames;
+  }
+
   /** return the relevant icon path for this AWS service. */
-  getIconPath(): string {
-    return "";
+  public getIconPath(serviceId: string): string {
+    // TODO: return both light and dark variants.
+    return path.join(this.context.extensionPath, 'resources', 'icons', 'services', `${serviceId}.svg`);
   }
 }

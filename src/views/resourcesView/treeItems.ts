@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import { ProfileFocus, RegionFocus, ResourceTypeFocus, ServiceFocus } from '../../models/focusModel';
+import { ServiceProvider } from '../../services/serviceProvider';
 
 /**
  * The top-level class for any TreeItem in the Resources View
@@ -48,6 +49,7 @@ export class ResourceServiceTreeItem extends ResourceTreeItem {
     constructor(
         public readonly parent: ResourceRegionTreeItem,
         public readonly service: ServiceFocus,
+        public readonly provider: ServiceProvider,
         public readonly name: string
     ) {
         super(name, vscode.TreeItemCollapsibleState.Collapsed);
