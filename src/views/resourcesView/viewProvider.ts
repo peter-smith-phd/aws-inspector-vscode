@@ -4,6 +4,7 @@ import * as path from 'path';
 import { ResourceArnTreeItem, ResourceProfileTreeItem, ResourceRegionTreeItem, ResourceServiceTreeItem, ResourceTreeItem, ResourceTypeTreeItem } from './treeItems';
 import { Focus } from '../../models/focusModel';
 import { ProviderFactory } from '../../services/providerFactory';
+import ARN from '../../models/arnModel';
 
 /**
  * Provider for a view that shows all the profile/region/service/resource information
@@ -98,8 +99,7 @@ export class ResourceViewProvider implements vscode.TreeDataProvider<ResourceTre
         const [singularName, _] = serviceProvider.getResourceTypeNames(parent.resourceType.id);
 
         return Promise.all(parent.resourceType.arns.map(async arn => {
-            // TODO: extract the short name for this resource.
-            const name = arn;
+            const name = new ARN(arn).resourceName || 'Unknown Resource Name';
 
             /* Tooltip has form: <Service Name> <Resource Type Name> */
             const tooltip = `${serviceName} ${singularName}`;
