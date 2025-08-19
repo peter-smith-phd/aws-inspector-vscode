@@ -5,6 +5,7 @@ import { ResourceArnTreeItem, ResourceProfileTreeItem, ResourceRegionTreeItem, R
 import { Focus } from '../../models/focusModel';
 import { ProviderFactory } from '../../services/providerFactory';
 import ARN from '../../models/arnModel';
+import { getRegionLongName } from '../../models/regionModel';
 
 /**
  * Provider for a view that shows all the profile/region/service/resource information
@@ -64,7 +65,8 @@ export class ResourceViewProvider implements vscode.TreeDataProvider<ResourceTre
      */
     private makeResourceRegions(parent: ResourceProfileTreeItem): vscode.ProviderResult<ResourceTreeItem[]> {
         return Promise.all(parent.profile.regions.map(async region => {
-            return new ResourceRegionTreeItem(parent, region, 'Location Name');
+            const longName = getRegionLongName(region.id);
+            return new ResourceRegionTreeItem(parent, region, longName);
         }));
     }
 
