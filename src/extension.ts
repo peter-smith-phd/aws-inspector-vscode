@@ -1,9 +1,13 @@
+import * as fs from 'fs';
+import path from 'path';
+
 import * as vscode from 'vscode';
 import { ResourceViewProvider } from './views/resourcesView/viewProvider';
 import { FocusViewProvider } from './views/focusView/viewProvider';
 import { ResourceDetailsViewProvider } from './views/resourceDetailsView/viewProvider';
 import { Account } from './awsClients/account';
 import { ProviderFactory } from './services/providerFactory';
+import { Focus } from './models/focusModel';
 
 /**
  * This function is called when the AWS Inspector extension is first used. It 
@@ -25,9 +29,14 @@ export function activate(context: vscode.ExtensionContext) {
  * Register the VS Code views for the AWS Inspector extension.
  */
 function registerViews(context: vscode.ExtensionContext) {
+
+	// TODO: this is temporary, until we have a way to set the Focus dynamically./
+	const jsonString: string = fs.readFileSync(path.resolve(__dirname, `../src/test/resources/mock-cdk-deployment-1.focus.json`), 'utf-8');
+	const focus = Focus.parse(JSON.parse(jsonString));
+
 	return [
 		vscode.window.registerTreeDataProvider('aws-inspector.focus', new FocusViewProvider()),
-		vscode.window.registerTreeDataProvider('aws-inspector.resources', new ResourceViewProvider(context)),
+		vscode.window.registerTreeDataProvider('aws-inspector.resources', new ResourceViewProvider(focus, context)),
 		vscode.window.registerTreeDataProvider('aws-inspector.resource-details', new ResourceDetailsViewProvider()),
 	];
 }

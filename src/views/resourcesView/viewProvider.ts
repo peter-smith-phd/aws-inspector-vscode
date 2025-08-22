@@ -1,6 +1,5 @@
 import * as vscode from 'vscode';
-import * as fs from 'fs';
-import * as path from 'path';
+
 import { ResourceArnTreeItem, ResourceProfileTreeItem, ResourceRegionTreeItem, ResourceServiceTreeItem, ResourceTreeItem, ResourceTypeTreeItem } from './treeItems';
 import { Focus } from '../../models/focusModel';
 import { ProviderFactory } from '../../services/providerFactory';
@@ -13,13 +12,10 @@ import { getRegionLongName } from '../../models/regionModel';
  */
 export class ResourceViewProvider implements vscode.TreeDataProvider<ResourceTreeItem> {
 
-    private focus: Focus;
-
-    constructor(private readonly context: vscode.ExtensionContext) {
-        // TODO: create a way to dynamically set which focus is being used.
-        const jsonString: string = fs.readFileSync(path.resolve(__dirname, `../src/test/resources/mock-cdk-deployment-1.focus.json`), 'utf-8');
-        this.focus = Focus.parse(JSON.parse(jsonString));
-    }
+    constructor(
+        public readonly focus: Focus,
+        private readonly context: vscode.ExtensionContext
+    ) { /* empty */ }
 
     onDidChangeTreeData?: vscode.Event<any> | undefined;
 

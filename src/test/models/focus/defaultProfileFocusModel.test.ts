@@ -1,4 +1,4 @@
-import { Focus, loadStandardModel, RegionFocus, StandardModel } from '../../models/focusModel';
+import { Focus, loadStandardModel, RegionFocus, StandardModel } from '../../../models/focusModel';
 import assert from 'assert';
 
 suite('Everything in default profile focus model', () => {
