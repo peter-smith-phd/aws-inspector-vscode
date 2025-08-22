@@ -1,10 +1,12 @@
 import * as vscode from 'vscode';
 
-import { ResourceArnTreeItem, ResourceProfileTreeItem, ResourceRegionTreeItem, ResourceServiceTreeItem, ResourceTreeItem, ResourceTypeTreeItem } from './treeItems';
+import { ResourceArnTreeItem, ResourceErrorTreeItem, ResourceProfileTreeItem, ResourceRegionTreeItem, ResourceServiceTreeItem, ResourceTreeItem, ResourceTypeTreeItem } from './treeItems';
 import { Focus } from '../../models/focusModel';
 import { ProviderFactory } from '../../services/providerFactory';
 import ARN from '../../models/arnModel';
 import { getRegionLongName } from '../../models/regionModel';
+import { STS } from '../../awsClients/sts';
+import { IAM } from '../../awsClients/iam';
 
 /**
  * Provider for a view that shows all the profile/region/service/resource information
@@ -41,7 +43,7 @@ export class ResourceViewProvider implements vscode.TreeDataProvider<ResourceTre
     getParent?(element: ResourceTreeItem) {
         return null;
     }
-    
+
     resolveTreeItem?(item: vscode.TreeItem, element: ResourceTreeItem, token: vscode.CancellationToken): vscode.ProviderResult<vscode.TreeItem> {
         throw new Error('Method not implemented.');
     }
@@ -52,7 +54,16 @@ export class ResourceViewProvider implements vscode.TreeDataProvider<ResourceTre
      */
     private makeResourceProfiles(focus: Focus): vscode.ProviderResult<ResourceTreeItem[]> {
         return Promise.all(focus.profiles.map(async profile => {
-            return new ResourceProfileTreeItem(profile, '123412341234', 'staging');
+            const [{ account }, alias] = await Promise.all([
+                STS.getCallerIdentity(profile.id),
+                IAM.getAccountAlias(profile.id)
+            ]);
+            if (account && alias) {
+                return new ResourceProfileTreeItem(profile, account, alias);
+            } else {
+                /* error communicating with AWS, possibly bad credentials */
+                return new ResourceErrorTreeItem(`Invalid Profile: ${profile.id}`);
+            }
         }));
     }
 

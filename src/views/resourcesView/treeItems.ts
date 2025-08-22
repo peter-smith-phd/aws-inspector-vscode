@@ -83,3 +83,15 @@ export class ResourceArnTreeItem extends ResourceTreeItem {
         super(name);
     }
 }
+
+/**
+ * Represents a TreeItem that we weren't able to show because
+ * of some error.
+ */
+export class ResourceErrorTreeItem extends ResourceTreeItem {
+    constructor(public readonly errorMessage: string) {
+        super(`Error: ${errorMessage}`, vscode.TreeItemCollapsibleState.None);
+        this.tooltip = errorMessage;
+        this.iconPath = new vscode.ThemeIcon('error');
+    }
+}
