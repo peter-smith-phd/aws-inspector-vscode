@@ -54,16 +54,15 @@ export class ResourceViewProvider implements vscode.TreeDataProvider<ResourceTre
      */
     private makeResourceProfiles(focus: Focus): vscode.ProviderResult<ResourceTreeItem[]> {
         return Promise.all(focus.profiles.map(async profile => {
-            const [{ account }, alias] = await Promise.all([
+            return Promise.all([
                 STS.getCallerIdentity(profile.id),
                 IAM.getAccountAlias(profile.id)
-            ]);
-            if (account && alias) {
+            ]).then(([{ account }, alias]) => {
                 return new ResourceProfileTreeItem(profile, account, alias);
-            } else {
+            }).catch((error) => {
                 /* error communicating with AWS, possibly bad credentials */
-                return new ResourceErrorTreeItem(`Invalid Profile: ${profile.id}`);
-            }
+                return new ResourceErrorTreeItem(`Invalid Profile: ${profile.id}. ${error}`);
+            });
         }));
     }
 

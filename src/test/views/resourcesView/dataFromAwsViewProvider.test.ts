@@ -48,7 +48,7 @@ suite('Fetching data from AWS', () => {
   });
 
   test('Profile data is reported as an error when account identity is unavailable', async () => {
-    getCallerIdentityStub.returns(Promise.resolve({ account: undefined }));
+    getCallerIdentityStub.returns(Promise.reject(new Error('Failed to get caller identity')));
     getAccountAliasStub.returns(Promise.resolve('staging'));
 
     const profiles = await viewProvider.getChildren(undefined);
@@ -58,12 +58,12 @@ suite('Fetching data from AWS', () => {
 
     const profile = profiles[0];
     assert.ok(profile instanceof ResourceErrorTreeItem);
-    assert.strictEqual(profile.label, 'Error: Invalid Profile: default');
+    assert.strictEqual(profile.label, 'Error: Invalid Profile: default. Error: Failed to get caller identity');
   });
 
   test('Profile data is reported as an error when account alias is unavailable', async () => {
     getCallerIdentityStub.returns(Promise.resolve({ account: '112233445566' }));
-    getAccountAliasStub.returns(Promise.resolve(undefined));
+    getAccountAliasStub.returns(Promise.reject(new Error('Failed to get account alias')));
 
     const profiles = await viewProvider.getChildren(undefined);
 
@@ -72,6 +72,6 @@ suite('Fetching data from AWS', () => {
 
     const profile = profiles[0];
     assert.ok(profile instanceof ResourceErrorTreeItem);
-    assert.strictEqual(profile.label, 'Error: Invalid Profile: default');
+    assert.strictEqual(profile.label, 'Error: Invalid Profile: default. Error: Failed to get account alias');
   });
 });

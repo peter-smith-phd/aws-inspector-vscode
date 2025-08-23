@@ -15,7 +15,18 @@ export function memoize<T extends (...args: any[]) => any>(func: T): T {
     }
 
     const result = func(...args);
-    cache.set(key, result);
-    return result;
+
+    /* for Promises, only cache them if they're successful */
+    if (result instanceof Promise) {
+      return result.then(res => {
+        cache.set(key, res);
+        return res;
+      }) as ReturnType<T>;
+
+    /* For non-Promises, always cache the result */
+    } else {
+      cache.set(key, result);
+      return result;
+    }
   } as T;
 }

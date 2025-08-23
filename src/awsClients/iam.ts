@@ -22,7 +22,7 @@ export class IAM {
       }
     } catch (ex) {
       console.error(`Failed to access account aliases for: ${profile}`);
-      return undefined;
+      throw ex;
     }
   });
 
@@ -31,7 +31,7 @@ export class IAM {
    * return undefined and let the caller behave appropriately. Note that only
    * the first account alias is returned.
    */
-  public static async getAccountAlias(profile: string): Promise<string | undefined> {
+  public static async getAccountAlias(profile: string): Promise<string> {
     return this.cachedGetAccountAlias(profile);
   }
 }
