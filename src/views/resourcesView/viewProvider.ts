@@ -7,6 +7,7 @@ import ARN from '../../models/arnModel';
 import { getRegionLongName } from '../../models/regionModel';
 import { STS } from '../../awsClients/sts';
 import { IAM } from '../../awsClients/iam';
+import { Account } from '../../awsClients/account';
 
 /**
  * Provider for a view that shows all the profile/region/service/resource information
@@ -70,7 +71,24 @@ export class ResourceViewProvider implements vscode.TreeDataProvider<ResourceTre
      * Create ResourceRegionTreeItems from the regions in the profile.
      */
     private makeResourceRegions(parent: ResourceProfileTreeItem): vscode.ProviderResult<ResourceTreeItem[]> {
-        return Promise.all(parent.profile.regions.map(async region => {
+        /* 
+         * If there's a single region listed, and the region name is "*", then dynamically list all of
+         * the actual regions available in the current profile.
+         */
+        const regions = parent.profile.regions;
+        if (regions.length === 1 && regions[0].id === "*") {
+            const services = regions[0].services;
+            return Account.listRegions(parent.profile.id).then(regions => {
+                return regions.map(region => {
+                    const longName = getRegionLongName(region);
+                    const regionFocus = { id: region, services: services };
+                    return new ResourceRegionTreeItem(parent, regionFocus, longName);
+                });
+            });
+        }
+
+        /* else, show only the specified regions */
+        return Promise.all(regions.map(async region => {
             const longName = getRegionLongName(region.id);
             return new ResourceRegionTreeItem(parent, region, longName);
         }));

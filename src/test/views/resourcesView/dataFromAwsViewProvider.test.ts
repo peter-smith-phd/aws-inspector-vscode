@@ -5,35 +5,43 @@ import assert from 'assert';
 import { ResourceViewProvider } from "../../../views/resourcesView/viewProvider";
 import { Focus, loadStandardModel, StandardModel } from "../../../models/focusModel";
 import { ProviderFactory } from "../../../services/providerFactory";
-import { ResourceErrorTreeItem, ResourceProfileTreeItem } from "../../../views/resourcesView/treeItems";
+import { ResourceErrorTreeItem, ResourceProfileTreeItem, ResourceRegionTreeItem, ResourceServiceTreeItem } from "../../../views/resourcesView/treeItems";
 import { IAM } from "../../../awsClients/iam";
 import { STS } from "../../../awsClients/sts";
+import { Account } from "../../../awsClients/account";
+import { readFocusModelFromResourceFile } from "../../utils";
 
 suite('Fetching data from AWS', () => {
-  let viewProvider: ResourceViewProvider;
+  let focusEveryThingWildcard: Focus;
+  let focusFixedServices: Focus;
   let getCallerIdentityStub: sinon.SinonStub;
   let getAccountAliasStub: sinon.SinonStub;
+  let listRegionsStub: sinon.SinonStub;
 
   const mockExtensionContext = {
     extensionPath: '/mock-path'
   } as unknown as ExtensionContext;
 
   suiteSetup(() => {
-    const focus: Focus = loadStandardModel(StandardModel.EVERYTHING_IN_DEFAULT_PROFILE);
-    viewProvider = new ResourceViewProvider(focus, mockExtensionContext);
+    focusEveryThingWildcard = loadStandardModel(StandardModel.EVERYTHING_IN_DEFAULT_PROFILE);
+    focusFixedServices = readFocusModelFromResourceFile('mock-wildcard-regions-fixed-services.focus.json');
     ProviderFactory.initialize(mockExtensionContext);
 
     /* avoiding calling AWS for account data */
     getCallerIdentityStub = sinon.stub(STS, 'getCallerIdentity');
     getAccountAliasStub = sinon.stub(IAM, 'getAccountAlias');
+    listRegionsStub = sinon.stub(Account, 'listRegions');
   });
 
   suiteTeardown(() => {
     getCallerIdentityStub.restore();
     getAccountAliasStub.restore();
+    listRegionsStub.restore();
   });
 
   test('Profile data is correctly fetched', async () => {
+    const viewProvider = new ResourceViewProvider(focusEveryThingWildcard, mockExtensionContext);
+
     getCallerIdentityStub.returns(Promise.resolve({ account: '112233445566' }));
     getAccountAliasStub.returns(Promise.resolve('staging'));
 
@@ -48,6 +56,8 @@ suite('Fetching data from AWS', () => {
   });
 
   test('Profile data is reported as an error when account identity is unavailable', async () => {
+    const viewProvider = new ResourceViewProvider(focusEveryThingWildcard, mockExtensionContext);
+
     getCallerIdentityStub.returns(Promise.reject(new Error('Failed to get caller identity')));
     getAccountAliasStub.returns(Promise.resolve('staging'));
 
@@ -62,6 +72,8 @@ suite('Fetching data from AWS', () => {
   });
 
   test('Profile data is reported as an error when account alias is unavailable', async () => {
+    const viewProvider = new ResourceViewProvider(focusEveryThingWildcard, mockExtensionContext);
+
     getCallerIdentityStub.returns(Promise.resolve({ account: '112233445566' }));
     getAccountAliasStub.returns(Promise.reject(new Error('Failed to get account alias')));
 
@@ -73,5 +85,51 @@ suite('Fetching data from AWS', () => {
     const profile = profiles[0];
     assert.ok(profile instanceof ResourceErrorTreeItem);
     assert.strictEqual(profile.label, 'Error: Invalid Profile: default. Error: Failed to get account alias');
+  });
+
+  test('Region data is correctly fetched for wildcard regions', async () => {
+    const viewProvider = new ResourceViewProvider(focusEveryThingWildcard, mockExtensionContext);
+
+    getCallerIdentityStub.returns(Promise.resolve({ account: '112233445566' }));
+    getAccountAliasStub.returns(Promise.resolve('staging'));
+    listRegionsStub.returns(Promise.resolve(['ca-west-1', 'us-east-1', 'us-west-2']));
+
+    const profiles = await viewProvider.getChildren(undefined);
+    assert.ok(profiles);
+    assert.strictEqual(profiles.length, 1);
+
+    const regions = await viewProvider.getChildren(profiles[0]);
+    assert.ok(regions);
+    assert.strictEqual(regions.length, 3);
+    assert.ok(regions[0] instanceof ResourceRegionTreeItem);
+    assert.strictEqual(regions[0].label, 'ca-west-1');
+    assert.ok(regions[1] instanceof ResourceRegionTreeItem);
+    assert.strictEqual(regions[1].label, 'us-east-1');
+    assert.ok(regions[2] instanceof ResourceRegionTreeItem);
+    assert.strictEqual(regions[2].label, 'us-west-2');
+  });
+
+  test('With a wildcard region, every region has the same list of services', async () => {
+    const viewProvider = new ResourceViewProvider(focusFixedServices, mockExtensionContext);
+
+    getCallerIdentityStub.returns(Promise.resolve({ account: '112233445566' }));
+    getAccountAliasStub.returns(Promise.resolve('staging'));
+    listRegionsStub.returns(Promise.resolve(['ca-west-1', 'us-east-1', 'us-west-2']));
+
+    const profiles = await viewProvider.getChildren(undefined);
+    assert.ok(profiles);
+    assert.strictEqual(profiles.length, 1);
+
+    const regions = await viewProvider.getChildren(profiles[0]);
+    assert.ok(regions);
+    assert.strictEqual(regions.length, 3);
+
+    for (const region of regions) {
+      const services = await viewProvider.getChildren(region);
+      assert.ok(services);
+      assert.strictEqual(services.length, 1); // states
+      assert.ok(services[0] instanceof ResourceServiceTreeItem);
+      assert.strictEqual(services[0].label, 'Step Functions');
+    }
   });
 });

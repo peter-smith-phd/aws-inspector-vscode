@@ -31,7 +31,7 @@ export function activate(context: vscode.ExtensionContext) {
 function registerViews(context: vscode.ExtensionContext) {
 
 	// TODO: this is temporary, until we have a way to set the Focus dynamically./
-	const jsonString: string = fs.readFileSync(path.resolve(__dirname, `../src/test/resources/mock-cdk-deployment-1.focus.json`), 'utf-8');
+	const jsonString: string = fs.readFileSync(path.resolve(__dirname, `../src/test/resources/mock-wildcard-regions-fixed-services.focus.json`), 'utf-8');
 	const focus = Focus.parse(JSON.parse(jsonString));
 
 	return [

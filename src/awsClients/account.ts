@@ -1,28 +1,41 @@
-import { AccountClient, ListRegionsCommand } from "@aws-sdk/client-account";
+import { AccountClient, ListRegionsCommand, ListRegionsCommandInput, RegionOptStatus } from "@aws-sdk/client-account";
+import { memoize } from "../shared/memoize";
 
 /**
  * Accessor functions for the AWS "account" service
  */
 export class Account {
 
+  private static cachedGetAccountClient = memoize((profile: string) =>
+    new AccountClient({ profile: profile })
+  );
+
+  private static cachedListRegions = memoize(async (profile: string) => {
+    const client = this.cachedGetAccountClient(profile);
+
+    const request: ListRegionsCommandInput = {
+      RegionOptStatusContains: [ RegionOptStatus.ENABLED_BY_DEFAULT, RegionOptStatus.ENABLED ]
+    };
+    const RegionNames: string[] = [];
+
+    while (true) {
+      const response = await client.send(new ListRegionsCommand(request));
+      if (response.Regions) {
+        RegionNames.push(...response.Regions.map(region => region.RegionName!));
+      }
+      if (!response.NextToken) {
+        break;
+      }
+      request.NextToken = response.NextToken;
+    }
+    return RegionNames;
+  });
+
   /**
-   * Return the list of AWS regions available for this profile. Return
-   * the short region names (e.g. "us-east-1") along with the corresponding full
-   * name (e.g. "US East (N. Virginia)"). There will be no pagination of the
-   * results, and the data will be cached for the lifetime of the VS Code session.
+   * Return the list of AWS regions available for this profile. For example:
+   *    ['ap-southeast-2', 'us-east-1', 'us-west-2']
    */
-  public static async listRegions(profile: string) {
-    // TODO: cache this client
-    const client = new AccountClient({
-      profile: 'aws'
-    });
-
-    // TODO: pagination
-    // TODO: merge with full region names
-    const command = new ListRegionsCommand({});
-
-    // TODO: cache the result for each different profile. This data will not
-    // change on each call.
-    return (await client.send(command)).Regions;
+  public static async listRegions(profile: string): Promise<string[]> {
+    return this.cachedListRegions(profile);
   };
 }
