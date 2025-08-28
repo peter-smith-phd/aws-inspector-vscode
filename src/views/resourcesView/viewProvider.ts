@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 
-import { ResourceArnTreeItem, ResourceErrorTreeItem, ResourceProfileTreeItem, ResourceRegionTreeItem, ResourceServiceTreeItem, ResourceTreeItem, ResourceTypeTreeItem } from './treeItems';
+import { ResourceArnTreeItem, ResourceErrorTreeItem, ResourcePlaceholderTreeItem, ResourceProfileTreeItem, ResourceRegionTreeItem, ResourceServiceTreeItem, ResourceTreeItem, ResourceTypeTreeItem } from './treeItems';
 import { Focus } from '../../models/focusModel';
 import { ProviderFactory } from '../../services/providerFactory';
 import ARN from '../../models/arnModel';
@@ -95,10 +95,28 @@ export class ResourceViewProvider implements vscode.TreeDataProvider<ResourceTre
     }
 
     /**
-     * Create ResourceServiceTreeItems from the services in the region.
+     * Create ResourceServiceTreeItems from the services in the region. If the region name is a wildcard,
+     * then dynamically list all services available in the region. Any resourceTypes or ARNs below this
+     * level in the focus are assumed to always be wildcards as well.
      */
     private makeResourceServices(parent: ResourceRegionTreeItem): vscode.ProviderResult<ResourceTreeItem[]> {
-        return Promise.all(parent.region.services.map(async service => {
+        /*
+         * If there's a single service listed, and the service name is "*", then dynamically list all of
+         * the actual services available in the current region.
+         */
+        const services = parent.region.services;
+        if (services.length === 1 && services[0].id === "*") {
+            return ProviderFactory.getSupportedServices().map(provider => {
+                const serviceFocus = { 
+                    id: provider.getId(), 
+                    resourcetypes: provider.getResourceTypes().map(name => ({ id: name, arns: ["*"] }))
+                };
+                return new ResourceServiceTreeItem(parent, serviceFocus, provider, provider.getName());
+            });
+        }
+
+        /* else, show only the specified services */
+        return Promise.all(services.map(async service => {
             const provider = ProviderFactory.getProviderForService(service.id);
             return new ResourceServiceTreeItem(parent, service, provider, provider.getName());
         }));
@@ -123,6 +141,16 @@ export class ResourceViewProvider implements vscode.TreeDataProvider<ResourceTre
         const serviceName = serviceProvider.getName();
         const serviceIconPath = serviceProvider.getIconPath(serviceProvider.getId());
         const [singularName, _] = serviceProvider.getResourceTypeNames(parent.resourceType.id);
+
+        /*
+         * If there are no ARNs in the list, or it's a wildcard ARN and nothing is returned, display
+         * a placeholder tree item to indicate there's nothing there. TODO: still need to dynamically
+         * fetch list of resources in wildcard case.
+         */
+       const arns = parent.resourceType.arns;
+        if (parent.resourceType.arns.length === 0 || (parent.resourceType.arns.length === 1 && parent.resourceType.arns[0] === "*")) {
+            return [new ResourcePlaceholderTreeItem()];
+        }
 
         return Promise.all(parent.resourceType.arns.map(async arn => {
             const name = new ARN(arn).resourceName || 'Unknown Resource Name';

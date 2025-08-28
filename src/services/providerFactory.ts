@@ -44,4 +44,12 @@ export class ProviderFactory {
     }
     return provider;
   }
+
+  /**
+   * Return the complete list of supported ServiceProviders, in alphabetical
+   * (display) order.
+   */
+  public static getSupportedServices(): ServiceProvider[] {
+    return Object.values(ProviderFactory.providers);
+  }
 }

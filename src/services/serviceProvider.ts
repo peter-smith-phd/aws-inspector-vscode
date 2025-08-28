@@ -34,6 +34,14 @@ export abstract class ServiceProvider {
     return resourceTypeNames;
   }
 
+  /**
+   * Get the resource types for this AWS service.
+   * @returns An array of resource type IDs.
+   */
+  public getResourceTypes(): string[] {
+    return Object.keys(this.resourceTypes);
+  }
+
   /** return the relevant icon path for this AWS service. */
   public getIconPath(serviceId: string): string {
     // TODO: return both light and dark variants.

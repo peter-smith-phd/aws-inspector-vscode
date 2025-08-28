@@ -95,3 +95,14 @@ export class ResourceErrorTreeItem extends ResourceTreeItem {
         this.iconPath = new vscode.ThemeIcon('error');
     }
 }
+
+/**
+ * Represents a TreeItem that is essentially a placeholder. This is not an
+ * error, but more for indicating that there are no resources to display.
+ */
+export class ResourcePlaceholderTreeItem extends ResourceTreeItem {
+    constructor() {
+        super("[No Resources]", vscode.TreeItemCollapsibleState.None);
+        this.tooltip = "No Resources to Display";
+    }
+}

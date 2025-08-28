@@ -17,6 +17,7 @@ suite('Fetching data from AWS', () => {
   let getCallerIdentityStub: sinon.SinonStub;
   let getAccountAliasStub: sinon.SinonStub;
   let listRegionsStub: sinon.SinonStub;
+  let supportedServicesStub: sinon.SinonStub;
 
   const mockExtensionContext = {
     extensionPath: '/mock-path'
@@ -31,12 +32,14 @@ suite('Fetching data from AWS', () => {
     getCallerIdentityStub = sinon.stub(STS, 'getCallerIdentity');
     getAccountAliasStub = sinon.stub(IAM, 'getAccountAlias');
     listRegionsStub = sinon.stub(Account, 'listRegions');
+    supportedServicesStub = sinon.stub(ProviderFactory, 'getSupportedServices');
   });
 
   suiteTeardown(() => {
     getCallerIdentityStub.restore();
     getAccountAliasStub.restore();
     listRegionsStub.restore();
+    supportedServicesStub.restore();
   });
 
   test('Profile data is correctly fetched', async () => {
@@ -131,5 +134,38 @@ suite('Fetching data from AWS', () => {
       assert.ok(services[0] instanceof ResourceServiceTreeItem);
       assert.strictEqual(services[0].label, 'Step Functions');
     }
+  });
+
+  test('With a wildcard service list, all services (and resource types) are returned', async () => {
+    const viewProvider = new ResourceViewProvider(focusEveryThingWildcard, mockExtensionContext);
+
+    getCallerIdentityStub.returns(Promise.resolve({ account: '112233445566' }));
+    getAccountAliasStub.returns(Promise.resolve('staging'));
+    listRegionsStub.returns(Promise.resolve(['ca-west-1', 'us-east-1', 'us-west-2']));
+    supportedServicesStub.returns([
+      { getId: () => 'states', getName: () => 'Step Functions', getResourceTypes: () => ['activity', 'statemachine'] },
+      { getId: () => 'lambda', getName: () => 'Lambda', getResourceTypes: () => ['function'] }
+    ]);
+
+    const profiles = await viewProvider.getChildren(undefined);
+    assert.ok(profiles);
+    assert.strictEqual(profiles.length, 1);
+
+    const regions = await viewProvider.getChildren(profiles[0]);
+    assert.ok(regions);
+    assert.strictEqual(regions.length, 3);
+
+    const region = regions[0]; // ca-west-1
+    const services = await viewProvider.getChildren(region);
+    assert.ok(services);
+    assert.strictEqual(services.length, 2); // states, lambda
+
+    const statesService = services[0];
+    assert.ok(statesService instanceof ResourceServiceTreeItem);
+    assert.strictEqual(statesService.label, 'Step Functions');
+
+    const lambdaService = services[1];
+    assert.ok(lambdaService instanceof ResourceServiceTreeItem);
+    assert.strictEqual(lambdaService.label, 'Lambda');
   });
 });
