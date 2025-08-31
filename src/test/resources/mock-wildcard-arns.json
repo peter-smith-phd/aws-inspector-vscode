@@ -1,0 +1,28 @@
+{
+  "version": "1.0",
+  "profiles": [
+    {
+      "id": "default",
+      "regions": [
+        {
+          "id": "us-west-1",
+          "services": [
+            {
+              "id": "states",
+              "resourcetypes": [
+                {
+                  "id": "activity",
+                  "arns": [ "*" ]
+                },
+                {
+                  "id": "statemachine",
+                  "arns": [ "*" ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

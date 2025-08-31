@@ -107,8 +107,8 @@ export class ResourceViewProvider implements vscode.TreeDataProvider<ResourceTre
         const services = parent.region.services;
         if (services.length === 1 && services[0].id === "*") {
             return ProviderFactory.getSupportedServices().map(provider => {
-                const serviceFocus = { 
-                    id: provider.getId(), 
+                const serviceFocus = {
+                    id: provider.getId(),
                     resourcetypes: provider.getResourceTypes().map(name => ({ id: name, arns: ["*"] }))
                 };
                 return new ResourceServiceTreeItem(parent, serviceFocus, provider, provider.getName());
@@ -137,28 +137,36 @@ export class ResourceViewProvider implements vscode.TreeDataProvider<ResourceTre
      * Create ResourceArnTreeItems from the ARNs in the resource type.
      */
     private makeResourceArns(parent: ResourceTypeTreeItem): vscode.ProviderResult<ResourceTreeItem[]> {
+        const profile = parent.parent.parent.parent.profile.id;
+        const region = parent.parent.parent.region.id;
         const serviceProvider = parent.parent.provider;
         const serviceName = serviceProvider.getName();
         const serviceIconPath = serviceProvider.getIconPath(serviceProvider.getId());
         const [singularName, _] = serviceProvider.getResourceTypeNames(parent.resourceType.id);
 
         /*
-         * If there are no ARNs in the list, or it's a wildcard ARN and nothing is returned, display
-         * a placeholder tree item to indicate there's nothing there. TODO: still need to dynamically
-         * fetch list of resources in wildcard case.
+         * Cases:
+         * 1) Wildcard ARN: ["*"] - fetch all ARNs of this resource type from AWS
+         * 2) Specific ARNs: ["arn:aws:..."] - use the specified ARNs directly
+         * 3) No ARNs: [] - display a placeholder tree item
          */
-       const arns = parent.resourceType.arns;
-        if (parent.resourceType.arns.length === 0 || (parent.resourceType.arns.length === 1 && parent.resourceType.arns[0] === "*")) {
-            return [new ResourcePlaceholderTreeItem()];
-        }
+        const arnSpecs = parent.resourceType.arns;
+        const useWildCard = arnSpecs.length === 1 && arnSpecs[0] === "*";
+        const arnPromise = useWildCard ?
+            serviceProvider.getResourceArns(profile, region, parent.resourceType.id) : Promise.resolve(arnSpecs);
 
-        return Promise.all(parent.resourceType.arns.map(async arn => {
-            const name = new ARN(arn).resourceName || 'Unknown Resource Name';
+        return arnPromise.then(arns => {
+            if (arns.length === 0) {
+                return [new ResourcePlaceholderTreeItem()];
+            } else {
+                return arns.map(arn => {
+                    const name = new ARN(arn).resourceName || 'Unknown Resource Name';
 
-            /* Tooltip has form: <Service Name> <Resource Type Name> */
-            const tooltip = `${serviceName} ${singularName}`;
-
-            return new ResourceArnTreeItem(parent, arn, name, tooltip, serviceIconPath);
-        }));
+                    /* Tooltip has form: <Service Name> <Resource Type Name> */
+                    const tooltip = `${serviceName} ${singularName}`;
+                    return new ResourceArnTreeItem(parent, arn, name, tooltip, serviceIconPath);
+                });
+            }
+        }) as Promise<ResourceArnTreeItem[]>;
     }
 }

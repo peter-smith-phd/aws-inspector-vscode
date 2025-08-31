@@ -25,6 +25,9 @@ export abstract class ServiceProvider {
   /** return the human-readable name of this AWS service. */
   abstract getName(): string;
 
+  /** return the ARNs associated with the resource type */
+  abstract getResourceArns(profile: string, region: string, resourceType: string): Promise<string[]>;
+
   /** return the resource type names [singular, plural] for this AWS service */
   public getResourceTypeNames(resourceType: string): string[] {
     const resourceTypeNames = this.resourceTypes[resourceType];

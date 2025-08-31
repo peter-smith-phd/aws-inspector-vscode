@@ -5,15 +5,18 @@ import assert from 'assert';
 import { ResourceViewProvider } from "../../../views/resourcesView/viewProvider";
 import { Focus, loadStandardModel, StandardModel } from "../../../models/focusModel";
 import { ProviderFactory } from "../../../services/providerFactory";
-import { ResourceErrorTreeItem, ResourceProfileTreeItem, ResourceRegionTreeItem, ResourceServiceTreeItem } from "../../../views/resourcesView/treeItems";
+import { ResourceArnTreeItem, ResourceErrorTreeItem, ResourceProfileTreeItem, ResourceRegionTreeItem, ResourceServiceTreeItem, ResourceTypeTreeItem } from "../../../views/resourcesView/treeItems";
 import { IAM } from "../../../awsClients/iam";
 import { STS } from "../../../awsClients/sts";
 import { Account } from "../../../awsClients/account";
 import { readFocusModelFromResourceFile } from "../../utils";
+import { States } from "../../../awsClients/states";
+import { StateMachineType } from "@aws-sdk/client-sfn";
 
 suite('Fetching data from AWS', () => {
   let focusEveryThingWildcard: Focus;
   let focusFixedServices: Focus;
+  let focusWildcardArns: Focus;
   let getCallerIdentityStub: sinon.SinonStub;
   let getAccountAliasStub: sinon.SinonStub;
   let listRegionsStub: sinon.SinonStub;
@@ -26,30 +29,32 @@ suite('Fetching data from AWS', () => {
   suiteSetup(() => {
     focusEveryThingWildcard = loadStandardModel(StandardModel.EVERYTHING_IN_DEFAULT_PROFILE);
     focusFixedServices = readFocusModelFromResourceFile('mock-wildcard-regions-fixed-services.focus.json');
-    ProviderFactory.initialize(mockExtensionContext);
+    focusWildcardArns = readFocusModelFromResourceFile('mock-wildcard-arns.json');
 
-    /* avoiding calling AWS for account data */
+    ProviderFactory.initialize(mockExtensionContext);
+  });
+
+  setup(() => {
     getCallerIdentityStub = sinon.stub(STS, 'getCallerIdentity');
+    getCallerIdentityStub.returns(Promise.resolve({ account: '112233445566' }));
+
     getAccountAliasStub = sinon.stub(IAM, 'getAccountAlias');
+    getAccountAliasStub.returns(Promise.resolve('staging'));
+
     listRegionsStub = sinon.stub(Account, 'listRegions');
+    listRegionsStub.returns(Promise.resolve(['ca-west-1', 'us-east-1', 'us-west-2']));
+
     supportedServicesStub = sinon.stub(ProviderFactory, 'getSupportedServices');
   });
 
-  suiteTeardown(() => {
-    getCallerIdentityStub.restore();
-    getAccountAliasStub.restore();
-    listRegionsStub.restore();
-    supportedServicesStub.restore();
+  teardown(() => {
+    sinon.restore();
   });
 
   test('Profile data is correctly fetched', async () => {
     const viewProvider = new ResourceViewProvider(focusEveryThingWildcard, mockExtensionContext);
 
-    getCallerIdentityStub.returns(Promise.resolve({ account: '112233445566' }));
-    getAccountAliasStub.returns(Promise.resolve('staging'));
-
     const profiles = await viewProvider.getChildren(undefined);
-
     assert.ok(profiles);
     assert.strictEqual(profiles.length, 1);
 
@@ -62,10 +67,7 @@ suite('Fetching data from AWS', () => {
     const viewProvider = new ResourceViewProvider(focusEveryThingWildcard, mockExtensionContext);
 
     getCallerIdentityStub.returns(Promise.reject(new Error('Failed to get caller identity')));
-    getAccountAliasStub.returns(Promise.resolve('staging'));
-
     const profiles = await viewProvider.getChildren(undefined);
-
     assert.ok(profiles);
     assert.strictEqual(profiles.length, 1);
 
@@ -77,11 +79,8 @@ suite('Fetching data from AWS', () => {
   test('Profile data is reported as an error when account alias is unavailable', async () => {
     const viewProvider = new ResourceViewProvider(focusEveryThingWildcard, mockExtensionContext);
 
-    getCallerIdentityStub.returns(Promise.resolve({ account: '112233445566' }));
     getAccountAliasStub.returns(Promise.reject(new Error('Failed to get account alias')));
-
     const profiles = await viewProvider.getChildren(undefined);
-
     assert.ok(profiles);
     assert.strictEqual(profiles.length, 1);
 
@@ -92,18 +91,12 @@ suite('Fetching data from AWS', () => {
 
   test('Region data is correctly fetched for wildcard regions', async () => {
     const viewProvider = new ResourceViewProvider(focusEveryThingWildcard, mockExtensionContext);
-
-    getCallerIdentityStub.returns(Promise.resolve({ account: '112233445566' }));
-    getAccountAliasStub.returns(Promise.resolve('staging'));
-    listRegionsStub.returns(Promise.resolve(['ca-west-1', 'us-east-1', 'us-west-2']));
-
     const profiles = await viewProvider.getChildren(undefined);
-    assert.ok(profiles);
-    assert.strictEqual(profiles.length, 1);
+    const regions = await viewProvider.getChildren(profiles![0]);
 
-    const regions = await viewProvider.getChildren(profiles[0]);
     assert.ok(regions);
     assert.strictEqual(regions.length, 3);
+
     assert.ok(regions[0] instanceof ResourceRegionTreeItem);
     assert.strictEqual(regions[0].label, 'ca-west-1');
     assert.ok(regions[1] instanceof ResourceRegionTreeItem);
@@ -114,20 +107,10 @@ suite('Fetching data from AWS', () => {
 
   test('With a wildcard region, every region has the same list of services', async () => {
     const viewProvider = new ResourceViewProvider(focusFixedServices, mockExtensionContext);
-
-    getCallerIdentityStub.returns(Promise.resolve({ account: '112233445566' }));
-    getAccountAliasStub.returns(Promise.resolve('staging'));
-    listRegionsStub.returns(Promise.resolve(['ca-west-1', 'us-east-1', 'us-west-2']));
-
     const profiles = await viewProvider.getChildren(undefined);
-    assert.ok(profiles);
-    assert.strictEqual(profiles.length, 1);
+    const regions = await viewProvider.getChildren(profiles![0]);
 
-    const regions = await viewProvider.getChildren(profiles[0]);
-    assert.ok(regions);
-    assert.strictEqual(regions.length, 3);
-
-    for (const region of regions) {
+    for (const region of regions!) {
       const services = await viewProvider.getChildren(region);
       assert.ok(services);
       assert.strictEqual(services.length, 1); // states
@@ -138,24 +121,15 @@ suite('Fetching data from AWS', () => {
 
   test('With a wildcard service list, all services (and resource types) are returned', async () => {
     const viewProvider = new ResourceViewProvider(focusEveryThingWildcard, mockExtensionContext);
+    const profiles = await viewProvider.getChildren(undefined);
+    const regions = await viewProvider.getChildren(profiles![0]);
+    const region = regions![0]; // ca-west-1
 
-    getCallerIdentityStub.returns(Promise.resolve({ account: '112233445566' }));
-    getAccountAliasStub.returns(Promise.resolve('staging'));
-    listRegionsStub.returns(Promise.resolve(['ca-west-1', 'us-east-1', 'us-west-2']));
     supportedServicesStub.returns([
       { getId: () => 'states', getName: () => 'Step Functions', getResourceTypes: () => ['activity', 'statemachine'] },
       { getId: () => 'lambda', getName: () => 'Lambda', getResourceTypes: () => ['function'] }
     ]);
 
-    const profiles = await viewProvider.getChildren(undefined);
-    assert.ok(profiles);
-    assert.strictEqual(profiles.length, 1);
-
-    const regions = await viewProvider.getChildren(profiles[0]);
-    assert.ok(regions);
-    assert.strictEqual(regions.length, 3);
-
-    const region = regions[0]; // ca-west-1
     const services = await viewProvider.getChildren(region);
     assert.ok(services);
     assert.strictEqual(services.length, 2); // states, lambda
@@ -167,5 +141,64 @@ suite('Fetching data from AWS', () => {
     const lambdaService = services[1];
     assert.ok(lambdaService instanceof ResourceServiceTreeItem);
     assert.strictEqual(lambdaService.label, 'Lambda');
+  });
+
+  test('With a wildcard ARNs list, the relevant provider functions are called', async () => {
+    const viewProvider = new ResourceViewProvider(focusWildcardArns, mockExtensionContext);
+    const profiles = await viewProvider.getChildren(undefined);
+    const regions = await viewProvider.getChildren(profiles![0]);
+    const region = regions![0]; // us-west-1
+    const services = await viewProvider.getChildren(region);
+    const statesService = services![0]; // states
+
+    const resourceTypes = await viewProvider.getChildren(statesService);
+    assert.ok(resourceTypes);
+    assert.strictEqual(resourceTypes.length, 2);
+    assert.ok(resourceTypes[0] instanceof ResourceTypeTreeItem);
+    assert.strictEqual(resourceTypes[0].label, 'Activities');
+    assert.ok(resourceTypes[1] instanceof ResourceTypeTreeItem);
+    assert.strictEqual(resourceTypes[1].label, 'State Machines');
+
+    /* Should call States.listActivities with default/us-west-1 */
+    const listActivitiesStub = sinon.stub(States, 'listActivities');
+    listActivitiesStub.returns(Promise.resolve([
+      {
+        name: `activity-1`,
+        activityArn: `arn:aws:states:us-west-1:112233445566:activity:activity-1`,
+        creationDate: new Date()
+      },
+      {
+        name: `activity-2`,
+        activityArn: `arn:aws:states:us-west-1:112233445566:activity:activity-2`,
+        creationDate: new Date()
+      }
+    ]));
+
+    const activities = await viewProvider.getChildren(resourceTypes[0]);
+    assert.ok(listActivitiesStub.calledOnceWithExactly('default', 'us-west-1'));
+    assert.ok(activities);
+    assert.strictEqual(activities.length, 2);
+    assert.ok(activities[0] instanceof ResourceArnTreeItem);
+    assert.strictEqual(activities[0].label, 'activity-1');
+    assert.ok(activities[1] instanceof ResourceArnTreeItem);
+    assert.strictEqual(activities[1].label, 'activity-2');
+
+    /* Should call States.listStateMachines with default/us-west-1 */
+    const listStateMachinesStub = sinon.stub(States, 'listStateMachines');
+    listStateMachinesStub.returns(Promise.resolve([
+      {
+        name: `state-machine-1`,
+        stateMachineArn: `arn:aws:states:us-west-1:112233445566:stateMachine:state-machine-1`,
+        type: StateMachineType.STANDARD,
+        creationDate: new Date()
+      }
+    ]));
+
+    const stateMachines = await viewProvider.getChildren(resourceTypes[1]);
+    assert.ok(listStateMachinesStub.calledOnceWithExactly('default', 'us-west-1'));
+    assert.ok(stateMachines);
+    assert.strictEqual(stateMachines.length, 1);
+    assert.ok(stateMachines[0] instanceof ResourceArnTreeItem);
+    assert.strictEqual(stateMachines[0].label, 'state-machine-1');
   });
 });
