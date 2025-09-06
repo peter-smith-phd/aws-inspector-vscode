@@ -5,9 +5,13 @@ import * as vscode from 'vscode';
 import { ResourceViewProvider } from './views/resourcesView/viewProvider';
 import { FocusViewProvider } from './views/focusView/viewProvider';
 import { ResourceDetailsViewProvider } from './views/resourceDetailsView/viewProvider';
-import { Account } from './awsClients/account';
 import { ProviderFactory } from './services/providerFactory';
 import { Focus } from './models/focusModel';
+
+/** 
+ * View provider for the resource details view - we update this based on clicks in the resources view
+ */
+let resourceDetailsViewProvider: ResourceDetailsViewProvider | undefined = undefined;
 
 /**
  * This function is called when the AWS Inspector extension is first used. It 
@@ -18,11 +22,8 @@ export function activate(context: vscode.ExtensionContext) {
 	ProviderFactory.initialize(context);
 
 	/* Add all views and commands etc */
-	const disposable = [
-		...registerViews(context),
-		...registerCommands()
-	];
-	context.subscriptions.push(...disposable);
+	context.subscriptions.push(...registerViews(context));
+	context.subscriptions.push(...registerCommands());
 }
 
 /**
@@ -34,10 +35,12 @@ function registerViews(context: vscode.ExtensionContext) {
 	const jsonString: string = fs.readFileSync(path.resolve(__dirname, `../src/test/resources/mock-wildcard-regions-and-services.focus.json`), 'utf-8');
 	const focus = Focus.parse(JSON.parse(jsonString));
 
+	resourceDetailsViewProvider = new ResourceDetailsViewProvider();
+
 	return [
 		vscode.window.registerTreeDataProvider('aws-inspector.focus', new FocusViewProvider()),
 		vscode.window.registerTreeDataProvider('aws-inspector.resources', new ResourceViewProvider(focus, context)),
-		vscode.window.registerTreeDataProvider('aws-inspector.resource-details', new ResourceDetailsViewProvider()),
+		vscode.window.registerTreeDataProvider('aws-inspector.resource-details', resourceDetailsViewProvider),
 	];
 }
 
@@ -46,10 +49,8 @@ function registerViews(context: vscode.ExtensionContext) {
  */
 function registerCommands() {
 	return [
-		// TODO: remove this, it's just for testing.
-		vscode.commands.registerCommand('aws-inspector.helloWorld', async () => {
-			const output = await Account.listRegions('aws');
-			vscode.window.showInformationMessage('Hello World from AWS Inspector!' + JSON.stringify(output));
+		vscode.commands.registerCommand('aws-inspector.show-resource-details', async (arn: string) => {
+			resourceDetailsViewProvider!.setArn(arn);
 		})
 	];
 }

@@ -81,6 +81,11 @@ export class ResourceArnTreeItem extends ResourceTreeItem {
         public readonly iconPath: string
     ) {
         super(name);
+        this.command = {
+            command: 'aws-inspector.show-resource-details',
+            title: 'Show Resource Details',
+            arguments: [this.arn]
+        };
     }
 }
 
