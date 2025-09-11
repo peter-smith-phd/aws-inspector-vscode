@@ -1,5 +1,6 @@
 import { Sns } from "../../awsClients/sns";
-import { ServiceProvider } from "../serviceProvider";
+import ARN from "../../models/arnModel";
+import { FieldType, ServiceProvider } from "../serviceProvider";
 
 export class SnsServiceProvider extends ServiceProvider {
 
@@ -9,6 +10,14 @@ export class SnsServiceProvider extends ServiceProvider {
     } else {
       throw new Error(`Unknown resource type: ${resourceType}`);
     }
+  }
+
+  public async describeResource(profile: string, arn: ARN): Promise<{ field: string; value: string; type: FieldType; }[]> {
+    return [{
+      field: "Type",
+      value: "SNS Topic",
+      type: FieldType.NAME
+    }];
   }
 
   protected resourceTypes: Record<string, [string, string]> = {

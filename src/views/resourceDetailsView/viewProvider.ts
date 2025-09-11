@@ -1,11 +1,14 @@
 
 import * as vscode from 'vscode';
+import ARN from '../../models/arnModel';
+import { ProviderFactory } from '../../services/providerFactory';
 
-class ResourceDetailsTreeItem extends vscode.TreeItem {
+export class ResourceDetailsTreeItem extends vscode.TreeItem {
     constructor(public readonly label: string, public readonly value: string) {
         super(label);
         this.description = value;
         this.tooltip = value;
+        this.iconPath = new vscode.ThemeIcon('circle-small');
     }
 }
 
@@ -25,10 +28,14 @@ export class ResourceDetailsViewProvider implements vscode.TreeDataProvider<Reso
     /** The ARN of the currently selected resource */
     private arn: string | undefined = undefined;
 
+    /** The profile of the currently selected resource */
+    private profile: string | undefined = undefined;
+
     /** Update the view to show details of the selected resource */
-    public setArn(arn: string) {
-        if (arn !== this.arn) {
+    public setArn(profile: string, arn: string) {
+        if (arn !== this.arn || profile !== this.profile) {
             this.arn = arn;
+            this.profile = profile;
             this._onDidChangeTreeData.fire();
         }
     }
@@ -38,9 +45,23 @@ export class ResourceDetailsViewProvider implements vscode.TreeDataProvider<Reso
     }
 
     getChildren(element?: any): vscode.ProviderResult<ResourceDetailsTreeItem[]> {
-        if (this.arn) {
-            // TODO: add more details here.
-            return Promise.resolve([new ResourceDetailsTreeItem('ARN:', this.arn)]);
+        if (this.arn && this.profile) {
+            const resourceArn = new ARN(this.arn);
+            const service = ProviderFactory.getProviderForService(resourceArn.service);
+
+            const headerField = Promise.resolve([
+                new ResourceDetailsTreeItem('ARN: ', this.arn),
+                new ResourceDetailsTreeItem('Service: ', service.getName())
+            ]);
+
+            const resourceFields = service.describeResource(this.profile, resourceArn).then(fields => {
+                return fields.map(field => new ResourceDetailsTreeItem(field.field + ': ', field.value));
+            });
+
+            return Promise.all([headerField, resourceFields]).then(([header, resource]) => {
+                return header.concat(resource);
+            });
+
         } else {
             return Promise.resolve([new ResourceDetailsTreeItem('No resource selected', '')]);
         }

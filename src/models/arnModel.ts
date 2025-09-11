@@ -36,4 +36,8 @@ export default class ARN {
       this.resourceName = this.resourceId;
     }
   }
+
+  toString(): string {
+    return this.arn;
+  }
 }

@@ -1,5 +1,6 @@
 import { DynamoDB } from "../../awsClients/dynamodb";
-import { ServiceProvider } from "../serviceProvider";
+import ARN from "../../models/arnModel";
+import { FieldType, ServiceProvider } from "../serviceProvider";
 
 export class DynamoDBServiceProvider extends ServiceProvider {
   
@@ -9,6 +10,14 @@ export class DynamoDBServiceProvider extends ServiceProvider {
     } else {
       throw new Error(`Unknown resource type: ${resourceType}`);
     }
+  }
+  
+  public async describeResource(profile: string, arn: ARN): Promise<{ field: string; value: string; type: FieldType; }[]> {
+    return [{
+      field: "Type",
+      value: "DynamoDB Table",
+      type: FieldType.NAME
+    }];
   }
 
   protected resourceTypes: Record<string, [string, string]> = {

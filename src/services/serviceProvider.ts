@@ -1,6 +1,20 @@
 import { InternalError } from "../shared/errors";
 import * as vscode from 'vscode';
 import * as path from 'path';
+import ARN from "../models/arnModel";
+
+/** 
+ * Supported field types for resource descriptions. The type indicates
+ * what operations (hyperlinking etc) can be done with the data values
+ */
+export enum FieldType {
+    NAME = 'name', /* name, status, type, or any other short ID */
+    ARN = 'arn', /* can be hyperlinked */
+    DATE = 'date',
+    SHORT_TEXT = 'shortText',
+    LONG_TEXT = 'longText', /* can be shown in an editor for easier reading */
+    JSON = 'json' /* can be shown in an editor with JSON syntax highlighting */
+};
 
 /**
  * Abstract parent class for all service providers.
@@ -27,6 +41,9 @@ export abstract class ServiceProvider {
 
   /** return the ARNs associated with the resource type */
   abstract getResourceArns(profile: string, region: string, resourceType: string): Promise<string[]>;
+
+  /** return the fields associated with the resource, to appear in the Resource Details view */
+  abstract describeResource(profile: string, arn: ARN): Promise<{ field: string; value: string; type: FieldType }[]>;
 
   /** return the resource type names [singular, plural] for this AWS service */
   public getResourceTypeNames(resourceType: string): string[] {

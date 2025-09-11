@@ -49,8 +49,8 @@ function registerViews(context: vscode.ExtensionContext) {
  */
 function registerCommands() {
 	return [
-		vscode.commands.registerCommand('aws-inspector.show-resource-details', async (arn: string) => {
-			resourceDetailsViewProvider!.setArn(arn);
+		vscode.commands.registerCommand('aws-inspector.show-resource-details', async (profile: string, arn: string) => {
+			resourceDetailsViewProvider!.setArn(profile, arn);
 		})
 	];
 }
