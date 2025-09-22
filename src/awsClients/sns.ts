@@ -1,4 +1,4 @@
-import { ListTopicsCommand, ListTopicsCommandOutput, SNSClient, Topic } from "@aws-sdk/client-sns";
+import { GetTopicAttributesCommand, ListTopicsCommand, ListTopicsCommandOutput, SNSClient, Topic } from "@aws-sdk/client-sns";
 import { memoize } from "../shared/memoize";
 
 /**
@@ -29,5 +29,14 @@ export class Sns {
     } while (nextToken);
 
     return topics;
+  }
+
+  /**
+   * Get the attributes of an SNS topic.
+   */
+  public static getTopicAttributes(profile: string, region: string, topicArn: string): Promise<any> {
+    const client = this.cachedGetSnsClient(profile, region);
+    const command = new GetTopicAttributesCommand({ TopicArn: topicArn });
+    return client.send(command);
   }
 }

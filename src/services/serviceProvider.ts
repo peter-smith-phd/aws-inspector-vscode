@@ -13,7 +13,8 @@ export enum FieldType {
     DATE = 'date',
     SHORT_TEXT = 'shortText',
     LONG_TEXT = 'longText', /* can be shown in an editor for easier reading */
-    JSON = 'json' /* can be shown in an editor with JSON syntax highlighting */
+    JSON = 'json', /* can be shown in an editor with JSON syntax highlighting */
+    NUMBER = 'number' /* numeric value, e.g. count of resources */
 };
 
 /**

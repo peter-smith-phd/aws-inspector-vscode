@@ -45,35 +45,6 @@ export class CloudFormationServiceProvider extends ServiceProvider {
         { field: "Outputs", value: '', type: FieldType.NAME },
         ...outputFields
       ];
-
-/*
-            "Parameters": [
-                {
-                    "ParameterKey": "FileAssetsBucketKmsKeyId",
-                    "ParameterValue": "AWS_MANAGED_KEY"
-                },
-                {
-                    "ParameterKey": "PublicAccessBlockConfiguration",
-                    "ParameterValue": "true"
-                },
-            ],
-
-            "Outputs": [
-                {
-                    "OutputKey": "ImageRepositoryName",
-                    "OutputValue": "cdk-hnb659fds-container-assets-354918407227-ap-southeast-2",
-                    "Description": "The name of the ECR repository which hosts docker image assets"
-                },
-                {
-                    "OutputKey": "BucketName",
-                    "OutputValue": "cdk-hnb659fds-assets-354918407227-ap-southeast-2",
-                    "Description": "The name of the S3 bucket owned by the CDK toolkit stack"
-                },
-            ],
- */
-
-
-
     } else {
       throw new Error(`Unknown resource type for ARN: ${arn.toString()}`);
     }
