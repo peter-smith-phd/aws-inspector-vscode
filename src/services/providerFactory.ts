@@ -6,6 +6,7 @@ import { SnsServiceProvider } from "./sns/provider";
 import { StatesServiceProvider } from "./states/provider";
 import { LambdaServiceProvider } from "./lambda/provider";
 import { ServiceProvider } from "./serviceProvider";
+import { CloudFormationServiceProvider } from './cloudformation/provider';
 
 /**
  * A factory for providing access to AWS service providers.
@@ -22,6 +23,7 @@ export class ProviderFactory {
    */
   public static initialize(context: vscode.ExtensionContext) {
     ProviderFactory.providers = {
+      'cloudformation': new CloudFormationServiceProvider(context),
       'dynamodb': new DynamoDBServiceProvider(context),
       'lambda': new LambdaServiceProvider(context),
       'sns': new SnsServiceProvider(context),

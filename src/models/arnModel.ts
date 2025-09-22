@@ -31,7 +31,11 @@ export default class ARN {
     const resourceParts = this.resourceId.split(/[\/:]/);
     if (resourceParts.length > 1) {
       this.resourceType = resourceParts[0];
-      this.resourceName = this.resourceId.substring(this.resourceType.length + 1);
+      if (this.service === 'cloudformation') {
+        this.resourceName = resourceParts[1]; /* ignore the UUID from the CloudFormation stack ARN */
+      } else {
+        this.resourceName = this.resourceId.substring(this.resourceType.length + 1);
+      }
     } else {
       this.resourceName = this.resourceId;
     }
