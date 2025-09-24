@@ -1,5 +1,6 @@
-import { FunctionConfiguration, LambdaClient, ListFunctionsCommand, ListFunctionsCommandOutput } from "@aws-sdk/client-lambda";
+import { FunctionConfiguration, GetFunctionCommand, LambdaClient, ListFunctionsCommand, ListFunctionsCommandOutput } from "@aws-sdk/client-lambda";
 import { memoize } from "../shared/memoize";
+import ARN from "../models/arnModel";
 
 /**
  * Accessor functions for the AWS "Lambda" service
@@ -29,5 +30,19 @@ export class Lambda {
     } while (nextToken);
 
     return functions;
+  }
+
+  /**
+   * Get details of a specific Lambda function
+   */
+  public static async getFunction(profile: string, region: string, functionArn: ARN): Promise<FunctionConfiguration> {
+    const client = this.cachedGetLambdaClient(profile, region);
+    const command = new GetFunctionCommand({ FunctionName: functionArn.resourceName });
+    const response = await client.send(command);
+    if (response.Configuration) {
+      return response.Configuration;
+    } else {
+      throw new Error(`Failed to get Lambda function: ${functionArn.resourceName}`);
+    }
   }
 }
