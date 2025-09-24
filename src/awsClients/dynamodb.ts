@@ -1,6 +1,7 @@
 import { table } from "console";
 import { memoize } from "../shared/memoize";
-import { DescribeTableCommand, DescribeTableCommandOutput, DynamoDBClient, ListTablesCommand, ListTablesCommandOutput } from "@aws-sdk/client-dynamodb";
+import { DescribeTableCommand, DescribeTableCommandOutput, DynamoDBClient, ListTablesCommand, ListTablesCommandOutput, TableDescription } from "@aws-sdk/client-dynamodb";
+import ARN from "../models/arnModel";
 
 /**
  * Accessor functions for the AWS "DynamoDB" service
@@ -47,6 +48,17 @@ export class DynamoDB {
         } else {
           throw new Error(`Failed to describe DynamoDB table: ${tables[0]}`);
         }
+    }
+  }
+
+  public static async describeTable(profile: string, region: string, tableArn: ARN): Promise<TableDescription> {
+    const client = this.cachedGetDynamoDBClient(profile, region);
+    const command = new DescribeTableCommand({ TableName: tableArn.resourceName });
+    const response = await client.send(command);
+    if (response.Table) {
+      return response.Table;
+    } else {
+      throw new Error(`Failed to describe DynamoDB table: ${tableArn.resourceName}`);
     }
   }
 }
