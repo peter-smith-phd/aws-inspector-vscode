@@ -7,6 +7,7 @@ import { StatesServiceProvider } from "./states/provider";
 import { LambdaServiceProvider } from "./lambda/provider";
 import { ServiceProvider } from "./serviceProvider";
 import { CloudFormationServiceProvider } from './cloudformation/provider';
+import { IAMServiceProvider } from './iam/provider';
 
 /**
  * A factory for providing access to AWS service providers.
@@ -25,6 +26,7 @@ export class ProviderFactory {
     ProviderFactory.providers = {
       'cloudformation': new CloudFormationServiceProvider(context),
       'dynamodb': new DynamoDBServiceProvider(context),
+      'iam': new IAMServiceProvider(context),
       'lambda': new LambdaServiceProvider(context),
       'sns': new SnsServiceProvider(context),
       'states': new StatesServiceProvider(context),

@@ -1,5 +1,6 @@
-import { IAMClient, ListAccountAliasesCommand } from "@aws-sdk/client-iam";
+import { GetRoleCommand, GetRoleCommandOutput, IAMClient, ListAccountAliasesCommand, ListRolesCommand } from "@aws-sdk/client-iam";
 import { memoize } from "../shared/memoize";
+import ARN from "../models/arnModel";
 
 /**
  * Accessor functions for the AWS "iam" service
@@ -33,5 +34,42 @@ export class IAM {
    */
   public static async getAccountAlias(profile: string): Promise<string> {
     return this.cachedGetAccountAlias(profile);
+  }
+
+  /**
+   * List the IAM Roles in the specified profile. If the profile is not valid,
+   * reject the promise and let the caller behave appropriately.
+   */
+  public static async listRoles(profile: string): Promise<string[]> {
+    const client = this.cachedGetIamClient(profile);
+
+    let roles: string[] = [];
+    let marker: string | undefined = undefined;
+    do {
+      const command: ListRolesCommand = new ListRolesCommand({ Marker: marker });
+      const response = await client.send(command);
+      if (response.Roles) {
+        roles.push(...response.Roles.map(role => role.Arn!));
+      }
+      marker = response.Marker;
+    } while (marker);
+    return roles;
+  }
+
+  /**
+   * Get details about a specific IAM role.
+   */
+  public static async getRole(profile: string, roleArn: ARN): Promise<GetRoleCommandOutput> {
+    const client = this.cachedGetIamClient(profile);
+
+    /* Role names can be path-qualified, so we need to extract just the name part */
+    let roleName = roleArn.resourceName!;
+    const lastSlash = roleName.lastIndexOf('/');
+    if (lastSlash !== -1) {
+      roleName = roleName.substring(lastSlash + 1);
+    }
+    
+    const command = new GetRoleCommand({ RoleName: roleName });
+    return await client.send(command);
   }
 }
