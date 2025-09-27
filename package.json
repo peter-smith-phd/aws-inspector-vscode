@@ -86,6 +86,7 @@
     "@aws-sdk/client-sfn": "^3.876.0",
     "@aws-sdk/client-sns": "^3.876.0",
     "@aws-sdk/client-sts": "^3.876.0",
+    "js-ini": "^1.6.0",
     "zod": "^4.0.17"
   }
 }
