@@ -8,6 +8,7 @@ import { getRegionLongName } from '../../models/regionModel';
 import { STS } from '../../awsClients/sts';
 import { IAM } from '../../awsClients/iam';
 import { Account } from '../../awsClients/account';
+import AWSConfig from '../../models/awsConfig';
 
 /**
  * Provider for a view that shows all the profile/region/service/resource information
@@ -15,20 +16,35 @@ import { Account } from '../../awsClients/account';
  */
 export class ResourceViewProvider implements vscode.TreeDataProvider<ResourceTreeItem> {
 
+    /** The focus that determines what is shown in this view */
+    private focus?: Focus = undefined;
+
+    /** EventEmitter we use to produce the event when the tree data changes. */
+    private _onDidChangeTreeData = new vscode.EventEmitter<ResourceTreeItem | undefined | null | void>();
+    
+    /** The event that is fired when the tree data changes. For notifying listeners */
+    public readonly onDidChangeTreeData = this._onDidChangeTreeData.event;
+
     constructor(
-        public readonly focus: Focus,
         private readonly context: vscode.ExtensionContext
     ) { /* empty */ }
 
-    onDidChangeTreeData?: vscode.Event<any> | undefined;
+    public setFocus(focus: Focus) {
+        this.focus = focus;
+        this._onDidChangeTreeData.fire(); // refresh the whole tree
+    }
 
-    getTreeItem(element: ResourceTreeItem): vscode.TreeItem | Thenable<vscode.TreeItem> {
+    public getTreeItem(element: ResourceTreeItem): vscode.TreeItem | Thenable<vscode.TreeItem> {
         return element;
     }
 
-    getChildren(element?: any): vscode.ProviderResult<ResourceTreeItem[]> {
+    public getChildren(element?: any): vscode.ProviderResult<ResourceTreeItem[]> {
         if (!element) {
-            return this.makeResourceProfiles(this.focus);
+            if (!this.focus) {
+                return Promise.resolve([new ResourcePlaceholderTreeItem('Please select a focus in the Focus view.')]);
+            } else {
+                return this.makeResourceProfiles(this.focus);
+            }
         } else if (element instanceof ResourceProfileTreeItem) {
             return this.makeResourceRegions(element);
         } else if (element instanceof ResourceRegionTreeItem) {
@@ -41,11 +57,11 @@ export class ResourceViewProvider implements vscode.TreeDataProvider<ResourceTre
         return Promise.resolve([]);
     }
 
-    getParent?(element: ResourceTreeItem) {
+    public getParent?(element: ResourceTreeItem) {
         return null;
     }
 
-    resolveTreeItem?(item: vscode.TreeItem, element: ResourceTreeItem, token: vscode.CancellationToken): vscode.ProviderResult<vscode.TreeItem> {
+    public resolveTreeItem?(item: vscode.TreeItem, element: ResourceTreeItem, token: vscode.CancellationToken): vscode.ProviderResult<vscode.TreeItem> {
         throw new Error('Method not implemented.');
     }
 
@@ -87,10 +103,23 @@ export class ResourceViewProvider implements vscode.TreeDataProvider<ResourceTre
             });
         }
 
+        /* If the region name is 'default', then only show the user's currently selected default region */
+        if (regions.length === 1 && regions[0].id === "default") {
+            const region = AWSConfig.getRegionForProfile(parent.profile.id);
+            if (!region) {
+                return Promise.resolve([
+                    new ResourceErrorTreeItem(`Profile ${parent.profile.id} does not have a default region configured.`)
+                ]);
+            }
+            const regionFocus = { id: region, services: regions[0].services };
+            return Promise.resolve([
+                new ResourceRegionTreeItem(parent, regionFocus, getRegionLongName(region))
+            ]);
+        }
+
         /* else, show only the specified regions */
         return Promise.all(regions.map(async region => {
-            const longName = getRegionLongName(region.id);
-            return new ResourceRegionTreeItem(parent, region, longName);
+            return new ResourceRegionTreeItem(parent, region, getRegionLongName(region.id));
         }));
     }
 

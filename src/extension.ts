@@ -1,17 +1,9 @@
-import * as fs from 'fs';
-import path from 'path';
-
 import * as vscode from 'vscode';
 import { ResourceViewProvider } from './views/resourcesView/viewProvider';
 import { FocusViewProvider } from './views/focusView/viewProvider';
 import { ResourceDetailsViewProvider } from './views/resourceDetailsView/viewProvider';
 import { ProviderFactory } from './services/providerFactory';
-import { Focus } from './models/focusModel';
-
-/** 
- * View provider for the resource details view - we update this based on clicks in the resources view
- */
-let resourceDetailsViewProvider: ResourceDetailsViewProvider | undefined = undefined;
+import { ResourceArnTreeItem } from './views/resourcesView/treeItems';
 
 /**
  * This function is called when the AWS Inspector extension is first used. It 
@@ -31,28 +23,48 @@ export function activate(context: vscode.ExtensionContext) {
  */
 function registerViews(context: vscode.ExtensionContext) {
 
-	// TODO: this is temporary, until we have a way to set the Focus dynamically.
-	const jsonString: string = fs.readFileSync(path.resolve(__dirname, `../src/test/resources/mock-wildcard-regions-and-services.focus.json`), 'utf-8');
-	const focus = Focus.parse(JSON.parse(jsonString));
+	// TODO: change to canSelectMany: true when multiple focus selection is supported
+	const focusViewProvider = new FocusViewProvider(context);
+	const focusView = vscode.window.createTreeView(
+		'aws-inspector.focus', { treeDataProvider: focusViewProvider, canSelectMany: false });
 
-	resourceDetailsViewProvider = new ResourceDetailsViewProvider();
+	const resourcesViewProvider = new ResourceViewProvider(context);
+	const resourcesView = vscode.window.createTreeView(
+		'aws-inspector.resources', { treeDataProvider: resourcesViewProvider });
 
-	return [
-		vscode.window.registerTreeDataProvider('aws-inspector.focus', new FocusViewProvider()),
-		vscode.window.registerTreeDataProvider('aws-inspector.resources', new ResourceViewProvider(focus, context)),
-		vscode.window.registerTreeDataProvider('aws-inspector.resource-details', resourceDetailsViewProvider),
-	];
+	const resourceDetailsViewProvider = new ResourceDetailsViewProvider();
+	const resourceDetailsView = vscode.window.createTreeView(
+		'aws-inspector.resource-details', { treeDataProvider: resourceDetailsViewProvider });
+
+	/* 
+	 * Clicking in the Focus view will update the Resources view with the new focus
+	 */
+	focusView.onDidChangeSelection(async e => {
+		const focus = await focusViewProvider.getFocusFromSelection(e.selection);
+		if (focus) {
+			resourcesViewProvider.setFocus(focus);
+		}
+	});
+
+	/* 
+	 * Clicking in the Resources view will update the Resource Details view
+	 */
+	resourcesView.onDidChangeSelection(e => {
+		if (e.selection.length === 1 && e.selection[0] instanceof ResourceArnTreeItem) {
+			const treeItem: ResourceArnTreeItem = e.selection[0];
+			const profile = treeItem.parent.parent.parent.parent.profile.id;
+			resourceDetailsViewProvider.setArn(profile, treeItem.arn);
+		}
+	});
+
+	return [ focusView, resourcesView, resourceDetailsView ];
 }
 
 /**
  * Register the VS Code commands for the AWS Inspector extension.
  */
 function registerCommands() {
-	return [
-		vscode.commands.registerCommand('aws-inspector.show-resource-details', async (profile: string, arn: string) => {
-			resourceDetailsViewProvider!.setArn(profile, arn);
-		})
-	];
+	return [];
 }
 
 /**

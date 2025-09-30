@@ -5,13 +5,14 @@ import assert from 'assert';
 import { ResourceViewProvider } from "../../../views/resourcesView/viewProvider";
 import { Focus, loadStandardModel, StandardModel } from "../../../models/focusModel";
 import { ProviderFactory } from "../../../services/providerFactory";
-import { ResourceArnTreeItem, ResourceErrorTreeItem, ResourceProfileTreeItem, ResourceRegionTreeItem, ResourceServiceTreeItem, ResourceTypeTreeItem } from "../../../views/resourcesView/treeItems";
+import { ResourceArnTreeItem, ResourceErrorTreeItem, ResourcePlaceholderTreeItem, ResourceProfileTreeItem, ResourceRegionTreeItem, ResourceServiceTreeItem, ResourceTypeTreeItem } from "../../../views/resourcesView/treeItems";
 import { IAM } from "../../../awsClients/iam";
 import { STS } from "../../../awsClients/sts";
 import { Account } from "../../../awsClients/account";
 import { readFocusModelFromResourceFile } from "../../utils";
 import { States } from "../../../awsClients/states";
 import { StateMachineType } from "@aws-sdk/client-sfn";
+import AWSConfig from "../../../models/awsConfig";
 
 suite('Fetching data from AWS', () => {
   let focusEveryThingWildcard: Focus;
@@ -52,7 +53,8 @@ suite('Fetching data from AWS', () => {
   });
 
   test('Profile data is correctly fetched', async () => {
-    const viewProvider = new ResourceViewProvider(focusEveryThingWildcard, mockExtensionContext);
+    const viewProvider = new ResourceViewProvider(mockExtensionContext);
+    viewProvider.setFocus(focusEveryThingWildcard);
 
     const profiles = await viewProvider.getChildren(undefined);
     assert.ok(profiles);
@@ -64,7 +66,8 @@ suite('Fetching data from AWS', () => {
   });
 
   test('Profile data is reported as an error when account identity is unavailable', async () => {
-    const viewProvider = new ResourceViewProvider(focusEveryThingWildcard, mockExtensionContext);
+    const viewProvider = new ResourceViewProvider(mockExtensionContext);
+    viewProvider.setFocus(focusEveryThingWildcard);
 
     getCallerIdentityStub.returns(Promise.reject(new Error('Failed to get caller identity')));
     const profiles = await viewProvider.getChildren(undefined);
@@ -77,7 +80,8 @@ suite('Fetching data from AWS', () => {
   });
 
   test('Profile data is reported as an error when account alias is unavailable', async () => {
-    const viewProvider = new ResourceViewProvider(focusEveryThingWildcard, mockExtensionContext);
+    const viewProvider = new ResourceViewProvider(mockExtensionContext);
+    viewProvider.setFocus(focusEveryThingWildcard);
 
     getAccountAliasStub.returns(Promise.reject(new Error('Failed to get account alias')));
     const profiles = await viewProvider.getChildren(undefined);
@@ -90,7 +94,9 @@ suite('Fetching data from AWS', () => {
   });
 
   test('Region data is correctly fetched for wildcard regions', async () => {
-    const viewProvider = new ResourceViewProvider(focusEveryThingWildcard, mockExtensionContext);
+    const viewProvider = new ResourceViewProvider(mockExtensionContext);
+    viewProvider.setFocus(focusEveryThingWildcard);
+
     const profiles = await viewProvider.getChildren(undefined);
     const regions = await viewProvider.getChildren(profiles![0]);
 
@@ -106,7 +112,9 @@ suite('Fetching data from AWS', () => {
   });
 
   test('With a wildcard region, every region has the same list of services', async () => {
-    const viewProvider = new ResourceViewProvider(focusFixedServices, mockExtensionContext);
+    const viewProvider = new ResourceViewProvider(mockExtensionContext);
+    viewProvider.setFocus(focusFixedServices);
+
     const profiles = await viewProvider.getChildren(undefined);
     const regions = await viewProvider.getChildren(profiles![0]);
 
@@ -120,7 +128,9 @@ suite('Fetching data from AWS', () => {
   });
 
   test('With a wildcard service list, all services (and resource types) are returned', async () => {
-    const viewProvider = new ResourceViewProvider(focusEveryThingWildcard, mockExtensionContext);
+    const viewProvider = new ResourceViewProvider(mockExtensionContext);
+    viewProvider.setFocus(focusEveryThingWildcard);
+
     const profiles = await viewProvider.getChildren(undefined);
     const regions = await viewProvider.getChildren(profiles![0]);
     const region = regions![0]; // ca-west-1
@@ -144,7 +154,9 @@ suite('Fetching data from AWS', () => {
   });
 
   test('With a wildcard ARNs list, the relevant provider functions are called', async () => {
-    const viewProvider = new ResourceViewProvider(focusWildcardArns, mockExtensionContext);
+    const viewProvider = new ResourceViewProvider(mockExtensionContext);
+    viewProvider.setFocus(focusWildcardArns);
+
     const profiles = await viewProvider.getChildren(undefined);
     const regions = await viewProvider.getChildren(profiles![0]);
     const region = regions![0]; // us-west-1
@@ -200,5 +212,56 @@ suite('Fetching data from AWS', () => {
     assert.strictEqual(stateMachines.length, 1);
     assert.ok(stateMachines[0] instanceof ResourceArnTreeItem);
     assert.strictEqual(stateMachines[0].label, 'state-machine-1');
+  });
+
+  test('With a default region specified, the region from AWS_REGION is used', async () => {
+    process.env.AWS_REGION = 'ca-west-1';
+
+    const focusWithDefaultRegion = loadStandardModel(StandardModel.EVERYTHING_IN_DEFAULT_REGION);
+    const viewProvider = new ResourceViewProvider(mockExtensionContext);
+    viewProvider.setFocus(focusWithDefaultRegion);
+
+    const profiles = await viewProvider.getChildren(undefined);
+    const regions = await viewProvider.getChildren(profiles![0]);
+
+    assert.ok(regions);
+    assert.strictEqual(regions.length, 1);
+
+    const region = regions[0];
+    assert.ok(region instanceof ResourceRegionTreeItem);
+    assert.strictEqual(region.label, 'ca-west-1');
+
+    delete process.env.AWS_REGION;
+  });
+
+  test('With no default region available in .aws/config, an error is shown', async () => {
+    const focusWithDefaultRegion = loadStandardModel(StandardModel.EVERYTHING_IN_DEFAULT_REGION);
+    const viewProvider = new ResourceViewProvider(mockExtensionContext);
+    viewProvider.setFocus(focusWithDefaultRegion);
+    
+    /* stub out getRegionForProfile to return undefined */
+    sinon.stub(AWSConfig, 'getRegionForProfile').returns(undefined);
+
+    const profiles = await viewProvider.getChildren(undefined);
+    const regions = await viewProvider.getChildren(profiles![0]);
+
+    assert.ok(regions);
+    assert.strictEqual(regions.length, 1);
+
+    const region = regions[0];
+    assert.ok(region instanceof ResourceErrorTreeItem);
+    assert.strictEqual(region.label, 'Error: Profile default does not have a default region configured.');
+  });
+
+  test('With no focus set, an error is shown', async () => {
+    const viewProvider = new ResourceViewProvider(mockExtensionContext);
+
+    const profiles = await viewProvider.getChildren(undefined);
+    assert.ok(profiles);
+    assert.strictEqual(profiles.length, 1);
+
+    const profile = profiles[0];
+    assert.ok(profile instanceof ResourcePlaceholderTreeItem);
+    assert.strictEqual(profile.label, 'Please select a focus in the Focus view.');
   });
 });

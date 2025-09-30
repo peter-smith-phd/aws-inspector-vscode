@@ -21,7 +21,8 @@ suite('CDK Deployment 1 view provider', () => {
 
   suiteSetup(() => {
     const focus: Focus = readFocusModelFromResourceFile('mock-cdk-deployment-1.focus.json');
-    viewProvider = new ResourceViewProvider(focus, mockExtensionContext);
+    viewProvider = new ResourceViewProvider(mockExtensionContext);
+    viewProvider.setFocus(focus);
     ProviderFactory.initialize(mockExtensionContext);
 
     /* avoiding calling AWS for account data */

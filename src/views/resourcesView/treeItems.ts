@@ -81,12 +81,6 @@ export class ResourceArnTreeItem extends ResourceTreeItem {
         public readonly iconPath: string
     ) {
         super(name);
-        const profile = parent.parent.parent.parent.profile.id;
-        this.command = {
-            command: 'aws-inspector.show-resource-details',
-            title: 'Show Resource Details',
-            arguments: [profile, this.arn]
-        };
     }
 }
 
@@ -107,8 +101,8 @@ export class ResourceErrorTreeItem extends ResourceTreeItem {
  * error, but more for indicating that there are no resources to display.
  */
 export class ResourcePlaceholderTreeItem extends ResourceTreeItem {
-    constructor() {
-        super("[No Resources]", vscode.TreeItemCollapsibleState.None);
+    constructor(message: string = '[ No Resources ]') {
+        super(message, vscode.TreeItemCollapsibleState.None);
         this.tooltip = "No Resources to Display";
     }
 }

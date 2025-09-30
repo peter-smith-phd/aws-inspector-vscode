@@ -63,7 +63,7 @@ export class ResourceDetailsViewProvider implements vscode.TreeDataProvider<Reso
             });
 
         } else {
-            return Promise.resolve([new ResourceDetailsTreeItem('No resource selected', '')]);
+            return Promise.resolve([new ResourceDetailsTreeItem('Please select a resource in the Resources view.', '')]);
         }
     }
 

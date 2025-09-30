@@ -1,7 +1,6 @@
-import { Focus, loadStandardModel, RegionFocus, StandardModel } from '../../../models/focusModel';
+import { Focus, RegionFocus } from '../../../models/focusModel';
 import assert from 'assert';
 import { readFocusModelFromResourceFile } from '../../utils';
-
 
 suite('CDK Deployment 1 focus model', () => {
   let f: Focus;

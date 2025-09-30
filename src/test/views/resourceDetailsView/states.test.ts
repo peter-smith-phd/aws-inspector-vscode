@@ -1,16 +1,21 @@
-
-
 import assert from "assert";
 import sinon from "sinon";
 import { States } from "../../../awsClients/states";
 import { ResourceDetailsViewProvider } from "../../../views/resourceDetailsView/viewProvider";
 import { assertExpectedResourceDetailsTreeItems } from "./utils";
+import { ProviderFactory } from "../../../services/providerFactory";
+import { ExtensionContext } from "vscode";
 
 suite('Step Functions resource details', function () {
   let describeActivityStub: sinon.SinonStub;
   let describeStateMachineStub: sinon.SinonStub;
+  
+  const mockExtensionContext = {
+    extensionPath: '/mock-path'
+  } as unknown as ExtensionContext;
 
   setup(function () {
+    ProviderFactory.initialize(mockExtensionContext);
     describeActivityStub = sinon.stub(States, 'describeActivity');
     describeStateMachineStub = sinon.stub(States, 'describeStateMachine');
   });
@@ -105,7 +110,7 @@ suite('Step Functions resource details', function () {
     assert.ok(describeStateMachineStub.calledOnceWithExactly('default', 'ap-southeast-2', 'arn:aws:states:ap-southeast-2:123456789012:stateMachine:HelloWorldStateMachine'));
   });
 
-  test('State Machine details with only mandatory fieldsare correct', async function () {
+  test('State Machine details with only mandatory fields are correct', async function () {
     describeStateMachineStub.resolves({
       stateMachineArn: 'arn:aws:states:ap-southeast-2:123456789012:stateMachine:TestStateMachine',
       name: 'TestStateMachine',

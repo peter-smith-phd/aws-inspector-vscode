@@ -54,18 +54,32 @@ export type ResourceTypeFocus = z.infer<typeof ResourceTypeFocus>;
  * Standard focuses that are always available by default,
  * and can never be modified.
  */
-export enum StandardModel {
-  EVERYTHING_IN_DEFAULT_PROFILE = "everything-in-default-profile",
-  EVERYTHING_IN_DEFAULT_REGION = "everything-in-default-region"
+type StandardModelType = {
+  key: string;
+  name: string;
+}
+export class StandardModel {
+  static EVERYTHING_IN_DEFAULT_PROFILE: StandardModelType = {
+    key: "everything-in-default-profile",
+    name: "All Regions/Services in Default Profile"
+  };
+  static EVERYTHING_IN_DEFAULT_REGION: StandardModelType = {
+    key: "everything-in-default-region",
+    name: "All Services in Default Region"
+  };
+  static all = [
+    StandardModel.EVERYTHING_IN_DEFAULT_PROFILE,
+    StandardModel.EVERYTHING_IN_DEFAULT_REGION
+  ];
 }
 
 /**
  * Load one of the standard (pre-defined, unmodifiable) focuses. The
  * result is memoized since the data will not change.
  */
-export const loadStandardModel = memoize((model: StandardModel) => {
+export const loadStandardModel = memoize((model: StandardModelType, extensionPath: string = './' ) => {
   const jsonString: string = fs.readFileSync(
-    path.resolve(__dirname, `../../resources/focuses/${model.valueOf()}.focus.json`),
+    path.resolve(extensionPath, 'resources', 'focuses', `${model.key}.focus.json`),
     'utf-8');
 
   let json: any;
