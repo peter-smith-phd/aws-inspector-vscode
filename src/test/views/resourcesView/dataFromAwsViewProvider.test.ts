@@ -93,6 +93,30 @@ suite('Fetching data from AWS', () => {
     assert.strictEqual(profile.label, 'Error: Invalid Profile: default. Error: Failed to get account alias');
   });
 
+  test('With a wildcard profile in the focus, show all the profiles in the AWS config', async () => {
+    const focusWithWildcardProfile = loadStandardModel(StandardModel.EVERYTHING_IN_ALL_PROFILES);
+    const viewProvider = new ResourceViewProvider(mockExtensionContext);
+    viewProvider.setFocus(focusWithWildcardProfile);
+
+    sinon.stub(AWSConfig, 'getProfileNames').returns(['default', 'staging', 'production']);
+
+    const profiles = await viewProvider.getChildren(undefined);
+    assert.ok(profiles);
+    assert.strictEqual(profiles.length, 3);
+
+    const profile1 = profiles[0];
+    assert.ok(profile1 instanceof ResourceProfileTreeItem);
+    assert.strictEqual(profile1.label, 'Profile: default');
+
+    const profile2 = profiles[1];
+    assert.ok(profile2 instanceof ResourceProfileTreeItem);
+    assert.strictEqual(profile2.label, 'Profile: staging');
+
+    const profile3 = profiles[2];
+    assert.ok(profile3 instanceof ResourceProfileTreeItem);
+    assert.strictEqual(profile3.label, 'Profile: production');
+  });
+
   test('Region data is correctly fetched for wildcard regions', async () => {
     const viewProvider = new ResourceViewProvider(mockExtensionContext);
     viewProvider.setFocus(focusEveryThingWildcard);

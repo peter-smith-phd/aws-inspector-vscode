@@ -59,17 +59,23 @@ type StandardModelType = {
   name: string;
 }
 export class StandardModel {
-  static EVERYTHING_IN_DEFAULT_PROFILE: StandardModelType = {
-    key: "everything-in-default-profile",
-    name: "All Regions/Services in Default Profile"
-  };
   static EVERYTHING_IN_DEFAULT_REGION: StandardModelType = {
     key: "everything-in-default-region",
     name: "All Services in Default Region"
   };
+  static EVERYTHING_IN_DEFAULT_PROFILE: StandardModelType = {
+    key: "everything-in-default-profile",
+    name: "All Regions in Default Profile"
+  };
+  static EVERYTHING_IN_ALL_PROFILES: StandardModelType = {
+    key: "everything-in-all-profiles",
+    name: "Everything in all Profiles"
+  };
+
   static all = [
+    StandardModel.EVERYTHING_IN_DEFAULT_REGION,
     StandardModel.EVERYTHING_IN_DEFAULT_PROFILE,
-    StandardModel.EVERYTHING_IN_DEFAULT_REGION
+    StandardModel.EVERYTHING_IN_ALL_PROFILES
   ];
 }
 

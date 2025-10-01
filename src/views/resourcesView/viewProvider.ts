@@ -70,7 +70,18 @@ export class ResourceViewProvider implements vscode.TreeDataProvider<ResourceTre
      * valid names, and can not be a wildcard. We need to fetch the profile account's number and name.
      */
     private makeResourceProfiles(focus: Focus): vscode.ProviderResult<ResourceTreeItem[]> {
-        return Promise.all(focus.profiles.map(async profile => {
+        let profiles = focus.profiles;
+
+        /* if there's a wildcard profile, then fetch all profiles from AWSConfig */
+        if (profiles.length === 1 && profiles[0].id === "*") {
+            const regions = profiles[0].regions;
+            profiles = AWSConfig.getProfileNames().map(profileId => {
+                return { id: profileId, regions: regions };
+            });
+        }
+
+        /* else, show only the profiles specified in the focus */
+        return Promise.all(profiles.map(async profile => {
             return Promise.all([
                 STS.getCallerIdentity(profile.id),
                 IAM.getAccountAlias(profile.id)
