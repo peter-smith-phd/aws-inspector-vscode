@@ -1,18 +1,23 @@
 
 import * as vscode from 'vscode';
 import {
-    CloudFormationFocusTreeItem,
-    CloudFormationProfileTreeItem,
-    FiltersFocusTreeItem,
+    FocusCfnTopLevelTreeItem,
+    FocusCfnProfileTreeItem,
+    FocusFiltersTopLevelTreeItem,
     FocusErrorTreeItem,
     FocusTreeItem,
-    SingleFocusTreeItem,
-    WorkspaceFocusTreeItem
+    FocusSelectableTreeItem,
+    FocusWorkspaceTopLevelTreeItem,
+    FocusCfnRegionTreeItem,
+    FocusPlaceholderTreeItem
 } from './treeItems';
 import AWSConfig  from '../../models/awsConfig';
 import { STS } from '../../awsClients/sts';
 import { IAM } from '../../awsClients/iam';
 import { Focus, loadStandardModel, StandardModel } from '../../models/focusModel';
+import { Account } from '../../awsClients/account';
+import { getRegionLongName } from '../../models/regionModel';
+import { CloudFormation } from '../../awsClients/cloudformation';
 
 /**
  * Provider for a view allowing the user to focus on what they want to see in the "Resources"
@@ -37,27 +42,37 @@ export class FocusViewProvider implements vscode.TreeDataProvider<FocusTreeItem>
     public getChildren(element?: any): Thenable<FocusTreeItem[]> {
         if (!element) {
             return Promise.resolve([
-                new FiltersFocusTreeItem('Filters', vscode.TreeItemCollapsibleState.Collapsed),
-                new CloudFormationFocusTreeItem('CloudFormation Stacks', vscode.TreeItemCollapsibleState.Collapsed),
-                new WorkspaceFocusTreeItem('Workspace IaC', vscode.TreeItemCollapsibleState.Collapsed)
+                new FocusFiltersTopLevelTreeItem('Filters', vscode.TreeItemCollapsibleState.Collapsed),
+                new FocusCfnTopLevelTreeItem('CloudFormation Stacks', vscode.TreeItemCollapsibleState.Collapsed),
+                new FocusWorkspaceTopLevelTreeItem('Workspace IaC', vscode.TreeItemCollapsibleState.Collapsed)
             ]);
-        } else if (element instanceof FiltersFocusTreeItem) {
-            return this.makeFocusFilterItems();
-        } else if (element instanceof CloudFormationFocusTreeItem) {
-            return this.makeFocusCloudFormationItems();
-        } else if (element instanceof WorkspaceFocusTreeItem) {
-            return this.makeFocusWorkspaceItems();
+        } else if (element instanceof FocusFiltersTopLevelTreeItem) {
+            return this.makeFocusFiltersSelectableTreeItems();
+        } else if (element instanceof FocusCfnTopLevelTreeItem) {
+            return this.makeFocusCfnProfileTreeItems();
+        } else if (element instanceof FocusCfnProfileTreeItem) {
+            return this.makeFocusCfnRegionTreeItems(element);
+        } else if (element instanceof FocusCfnRegionTreeItem) {
+            return this.makeFocusCfnSelectableTreeItems(element);
+        } else if (element instanceof FocusWorkspaceTopLevelTreeItem) {
+            return this.makeFocusWorkspaceTreeItems();
         }
         return Promise.resolve([]);
     }
 
-    private makeFocusFilterItems(): Thenable<FocusTreeItem[]> {
+    /**
+     * Make selectable tree items for all the standard focus models.
+     */
+    private makeFocusFiltersSelectableTreeItems(): Thenable<FocusTreeItem[]> {
         return Promise.resolve(StandardModel.all.map(model => {
-            return new SingleFocusTreeItem(model.name, () => Promise.resolve(loadStandardModel(model, this.context.extensionPath)));
+            return new FocusSelectableTreeItem(model.name, () => Promise.resolve(loadStandardModel(model, this.context.extensionPath)));
         }));
     }
 
-    private makeFocusCloudFormationItems(): Thenable<FocusTreeItem[]> {
+    /**
+     * Make a list of tree items representing the Profiles that will have CloudFormation stacks in them.
+     */
+    private makeFocusCfnProfileTreeItems(): Thenable<FocusTreeItem[]> {
         const profiles = AWSConfig.getProfileNames();
         return Promise.all(
             profiles.map(profileName => {
@@ -65,7 +80,7 @@ export class FocusViewProvider implements vscode.TreeDataProvider<FocusTreeItem>
                     STS.getCallerIdentity(profileName),
                     IAM.getAccountAlias(profileName)
                 ]).then(([{ account }, alias]) => {
-                    return new CloudFormationProfileTreeItem(profileName, account, alias);
+                    return new FocusCfnProfileTreeItem(profileName, account, alias);
                 }).catch((error) => {
                     /* error communicating with AWS, possibly bad credentials */
                     return new FocusErrorTreeItem(`Invalid Profile: ${profileName}. ${error}`);
@@ -74,7 +89,40 @@ export class FocusViewProvider implements vscode.TreeDataProvider<FocusTreeItem>
         );
     }
 
-    private makeFocusWorkspaceItems(): Thenable<FocusTreeItem[]> {
+    /**
+     * Make a list of tree items representing the Regions that have CloudFormation stacks in them,
+     * for the given profile.
+     */
+    private makeFocusCfnRegionTreeItems(parent: FocusCfnProfileTreeItem): Thenable<FocusTreeItem[]> {
+        return Account.listRegions(parent.profileName).then(regions => {
+            return regions.map(regionName => {
+                return new FocusCfnRegionTreeItem(parent.profileName, regionName, getRegionLongName(regionName));
+            });
+        });
+    }
+
+    /**
+     * Make selectable tree items for all the CloudFormation stacks in the given region/profile.
+     */
+    private makeFocusCfnSelectableTreeItems(parent: FocusCfnRegionTreeItem): Thenable<FocusTreeItem[]> {
+        return CloudFormation.listStacks(parent.profileName, parent.regionName).then(stacks => {
+            if (stacks.length === 0) {
+                return [ new FocusPlaceholderTreeItem('[ No stacks ]') ];
+            }
+            return stacks.map(stack => {
+                // TODO: compute the actual focus for this stack
+                return new FocusSelectableTreeItem(stack.StackName!, () => {
+                    console.log(`Loading focus for stack ${stack.StackName}`);
+                    return Promise.resolve(undefined) as unknown as Promise<Focus>;
+                });
+            });
+        });
+    }
+
+    /**
+     * Make tree items for all the IaC defined in the current workspace.
+     */
+    private makeFocusWorkspaceTreeItems(): Thenable<FocusTreeItem[]> {
         throw new Error('Method not implemented.');
     }
     
@@ -95,7 +143,7 @@ export class FocusViewProvider implements vscode.TreeDataProvider<FocusTreeItem>
             return undefined;
         }
         const selectedItem = selection[0];
-        if (selectedItem instanceof SingleFocusTreeItem) {
+        if (selectedItem instanceof FocusSelectableTreeItem) {
             return selectedItem.getFocus();
         };
         return undefined;

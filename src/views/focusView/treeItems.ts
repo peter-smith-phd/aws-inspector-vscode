@@ -11,20 +11,11 @@ export class FocusTreeItem extends vscode.TreeItem {
 }
 
 /**
- * Top-level tree item for resource filters in the Focus view.
- */
-export class FiltersFocusTreeItem extends FocusTreeItem {
-    constructor(label: string, state?: vscode.TreeItemCollapsibleState) {
-        super(label, state);
-    }
-}
-
-/**
  * Tree item for an individual selectable filter in the Focus view. This
  * includes standard focus models, user-defined focuses, CloudFormation stacks,
  * and IaC defined directly in the workspace.
  */
-export class SingleFocusTreeItem extends FocusTreeItem {
+export class FocusSelectableTreeItem extends FocusTreeItem {
     private selected: boolean = false;
 
     constructor(label: string, public getFocus: () => Promise<Focus>) {
@@ -34,9 +25,18 @@ export class SingleFocusTreeItem extends FocusTreeItem {
 }
 
 /**
+ * Top-level tree item for resource filters in the Focus view.
+ */
+export class FocusFiltersTopLevelTreeItem extends FocusTreeItem {
+    constructor(label: string, state?: vscode.TreeItemCollapsibleState) {
+        super(label, state);
+    }
+}
+
+/**
  * Top-level tree item for CloudFormation stacks in the Focus view.
  */
-export class CloudFormationFocusTreeItem extends FocusTreeItem {
+export class FocusCfnTopLevelTreeItem extends FocusTreeItem {
     constructor(label: string, state?: vscode.TreeItemCollapsibleState) {
         super(label, state);
     }
@@ -45,21 +45,35 @@ export class CloudFormationFocusTreeItem extends FocusTreeItem {
 /**
  * Tree item representing a profile inside the CloudFormation stacks section.
  */
-export class CloudFormationProfileTreeItem extends FocusTreeItem {
+export class FocusCfnProfileTreeItem extends FocusTreeItem {
     constructor(
         public readonly profileName: string,
         public readonly accountId: string,
         public readonly accountName: string
     ) {
-        super(`Profile: ${profileName}`, vscode.TreeItemCollapsibleState.Expanded);
+        super(`Profile: ${profileName}`, vscode.TreeItemCollapsibleState.Collapsed);
         this.description = `(${accountId} - ${accountName})`;
+    }
+}
+
+/**
+ * Tree item representing a region inside a CloudFormation profile.
+ */
+export class FocusCfnRegionTreeItem extends FocusTreeItem {
+    constructor(
+        public readonly profileName: string,
+        public readonly regionName: string,
+        public readonly locationName: string
+    ) {
+        super(regionName, vscode.TreeItemCollapsibleState.Collapsed);
+        this.description = locationName;
     }
 }
 
 /** 
  * Top-level tree item for workspace IaC in the Focus view.
  */
-export class WorkspaceFocusTreeItem extends FocusTreeItem {
+export class FocusWorkspaceTopLevelTreeItem extends FocusTreeItem {
     constructor(label: string, state?: vscode.TreeItemCollapsibleState) {
         super(label, state);
     }
@@ -74,5 +88,16 @@ export class FocusErrorTreeItem extends FocusTreeItem {
         super(`Error: ${errorMessage}`, vscode.TreeItemCollapsibleState.None);
         this.tooltip = errorMessage;
         this.iconPath = new vscode.ThemeIcon('error');
+    }
+}
+
+/**
+ * Represents a TreeItem that is essentially a placeholder. This is not an
+ * error, but more for indicating that there are no resources to display.
+ */
+export class FocusPlaceholderTreeItem extends FocusTreeItem {
+    constructor(message: string = '[ No Resources ]') {
+        super(message, vscode.TreeItemCollapsibleState.None);
+        this.tooltip = "No Resources to Display";
     }
 }
