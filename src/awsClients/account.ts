@@ -1,5 +1,6 @@
-import { AccountClient, ListRegionsCommand, ListRegionsCommandInput, RegionOptStatus } from "@aws-sdk/client-account";
+import { AccountClient, AccountClientConfig, ListRegionsCommand, ListRegionsCommandInput, RegionOptStatus } from "@aws-sdk/client-account";
 import { memoize } from "../shared/memoize";
+import AWSConfig from "../models/awsConfig";
 
 /**
  * Accessor functions for the AWS "account" service
@@ -7,7 +8,7 @@ import { memoize } from "../shared/memoize";
 export class Account {
 
   private static cachedGetAccountClient = memoize((profile: string) =>
-    new AccountClient({ profile: profile })
+    new AccountClient(AWSConfig.getClientConfig(profile))
   );
 
   private static cachedListRegions = memoize(async (profile: string) => {

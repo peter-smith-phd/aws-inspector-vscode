@@ -1,5 +1,6 @@
-import { GetCallerIdentityCommand, GetCallerIdentityCommandOutput, STSClient } from "@aws-sdk/client-sts";
+import { GetCallerIdentityCommand, GetCallerIdentityCommandOutput, STSClient, STSClientConfig } from "@aws-sdk/client-sts";
 import { memoize } from "../shared/memoize";
+import AWSConfig from "../models/awsConfig";
 
 /**
  * Accessor functions for the AWS "sts" service
@@ -7,7 +8,7 @@ import { memoize } from "../shared/memoize";
 export class STS {
 
   private static cachedGetStsClient = memoize((profile: string) => {
-    return new STSClient({ profile: profile });
+    return new STSClient(AWSConfig.getClientConfig(profile));
   });
 
   private static cachedGetCallerIdentity = memoize(async (profile: string) => {

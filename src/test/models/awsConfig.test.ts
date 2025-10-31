@@ -35,7 +35,9 @@ region = eu-west-1
   });
 
   test('should return [] for missing config file', () => {
-    sinon.stub(fs, 'readFileSync').throws(new Error('File not found'));
+    const error = new Error('File not found') as any;
+    error.code = 'ENOENT';
+    sinon.stub(fs, 'readFileSync').throws(error);
     assert.strictEqual(AWSConfig.getProfileNames().length, 0);
   });
 
@@ -102,5 +104,37 @@ region = us-east-1
 `;
     sinon.stub(fs, 'readFileSync').returns(mockConfigContent);
     assert.strictEqual(AWSConfig.getRegionForProfile('user2'), undefined);
+  });
+
+  test('should ignore commented-out sections', () => {
+    const mockConfigContent = `
+[default]
+region = us-west-2
+
+[profile user1]
+region = us-east-1
+
+# [profile user2]
+# region = eu-central-1
+
+; [profile user3]
+; region = us-west-1
+`;
+    sinon.stub(fs, 'readFileSync').returns(mockConfigContent);
+    assert.deepStrictEqual(AWSConfig.getProfileNames(), ['default', 'user1']);
+  });
+
+  test('should throw UserConfigurationError for malformed config file', () => {
+    const mockConfigContent = `
+[default
+region = us-west-2
+
+[profile user1]
+region = us-east-1
+`;
+    sinon.stub(fs, 'readFileSync').returns(mockConfigContent);
+    assert.throws(() => {
+      AWSConfig.getProfileNames();
+    }, 'UserConfigurationError: Unsupported type of line: [2] "[default"');
   });
 });

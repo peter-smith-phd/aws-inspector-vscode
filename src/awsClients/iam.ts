@@ -1,6 +1,7 @@
-import { GetRoleCommand, GetRoleCommandOutput, IAMClient, ListAccountAliasesCommand, ListRolesCommand } from "@aws-sdk/client-iam";
+import { GetRoleCommand, GetRoleCommandOutput, IAMClient, IAMClientConfig, ListAccountAliasesCommand, ListRolesCommand } from "@aws-sdk/client-iam";
 import { memoize } from "../shared/memoize";
 import ARN from "../models/arnModel";
+import AWSConfig from "../models/awsConfig";
 
 /**
  * Accessor functions for the AWS "iam" service
@@ -8,7 +9,7 @@ import ARN from "../models/arnModel";
 export class IAM {
 
   private static cachedGetIamClient = memoize((profile: string) =>
-    new IAMClient({ profile: profile })
+    new IAMClient(AWSConfig.getClientConfig(profile))
   );
 
   private static cachedGetAccountAlias = memoize(async (profile: string) => {
