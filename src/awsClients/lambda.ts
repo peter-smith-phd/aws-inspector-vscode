@@ -1,4 +1,4 @@
-import { FunctionConfiguration, GetFunctionCommand, LambdaClient, ListFunctionsCommand, ListFunctionsCommandOutput } from "@aws-sdk/client-lambda";
+import { EventSourceMappingConfiguration, FunctionConfiguration, GetEventSourceMappingCommand, GetFunctionCommand, LambdaClient, ListEventSourceMappingsCommand, ListFunctionsCommand, ListFunctionsCommandOutput } from "@aws-sdk/client-lambda";
 import { memoize } from "../shared/memoize";
 import ARN from "../models/arnModel";
 
@@ -44,5 +44,35 @@ export class Lambda {
     } else {
       throw new Error(`Failed to get Lambda function: ${functionArn.resourceName}`);
     }
+  }
+
+  /**
+   * List all the event source mappings in the account/region.
+   */
+  public static async listEventSourceMappings(profile: string, region: string): Promise<EventSourceMappingConfiguration[]> {
+    const client = this.cachedGetLambdaClient(profile, region);
+
+    let mappings: EventSourceMappingConfiguration[] = [];
+    let nextToken: string | undefined = undefined;
+    do {
+      const command: ListEventSourceMappingsCommand = new ListEventSourceMappingsCommand({ Marker: nextToken });
+      const response = await client.send(command);
+      if (response.EventSourceMappings) {
+        mappings.push(...response.EventSourceMappings);
+      }
+      nextToken = response.NextMarker;
+    } while (nextToken);
+
+    return mappings;
+  }
+
+  /**
+   * Get details of a specific event source mapping
+   */
+  public static async getEventSourceMapping(profile: string, region: string, mappingArn: ARN): Promise<EventSourceMappingConfiguration> {
+    const client = this.cachedGetLambdaClient(profile, region);
+
+    const command = new GetEventSourceMappingCommand({ UUID: mappingArn.resourceName });
+    return await client.send(command);
   }
 }

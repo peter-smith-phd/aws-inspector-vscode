@@ -8,6 +8,8 @@ export class LambdaServiceProvider extends ServiceProvider {
   async getResourceArns(profile: string, region: string, resourceType: string): Promise<string[]> {
     if (resourceType === "function") {
       return (await Lambda.listFunctions(profile, region)).map(func => func.FunctionArn!);
+    } else if (resourceType === "event-source-mapping") {
+      return (await Lambda.listEventSourceMappings(profile, region)).map(mapping => mapping.EventSourceMappingArn!);
     } else {
       throw new Error(`Unknown resource type: ${resourceType}`);
     }
@@ -36,6 +38,21 @@ export class LambdaServiceProvider extends ServiceProvider {
         { field: "LogFormat", value: functionInfo.LoggingConfig?.LogFormat || 'N/A', type: FieldType.NAME },
         { field: "LogGroup", value: functionInfo.LoggingConfig?.LogGroup || 'N/A', type: FieldType.LOG_GROUP },
       ];
+    } else if (resourceType === 'event-source-mapping') {
+      const mappingInfo = await Lambda.getEventSourceMapping(profile, arn.region, arn);
+      return [
+        { field: "Resource Type", value: "Event Source Mapping", type: FieldType.NAME },
+        { field: "UUID", value: mappingInfo.UUID!, type: FieldType.NAME },
+        { field: "Function ARN", value: mappingInfo.FunctionArn!, type: FieldType.ARN },
+        { field: "Event Source ARN", value: mappingInfo.EventSourceArn || 'N/A', type: FieldType.ARN },
+        { field: "State", value: mappingInfo.State || 'N/A', type: FieldType.NAME },
+        { field: "State Transition Reason", value: mappingInfo.StateTransitionReason || 'N/A', type: FieldType.NAME },
+        { field: "Batch Size", value: mappingInfo.BatchSize!.toString(), type: FieldType.NUMBER },
+        { field: "Maximum Batching Window (seconds)", value: mappingInfo.MaximumBatchingWindowInSeconds!.toString(), type: FieldType.NUMBER },
+        { field: "Last Modified", value: mappingInfo.LastModified!.toISOString(), type: FieldType.DATE },
+        { field: "Last Processing Result", value: mappingInfo.LastProcessingResult || 'N/A', type: FieldType.NAME },
+        { field: "Function Response Types", value: (mappingInfo.FunctionResponseTypes || []).join(', ') || 'N/A', type: FieldType.NAME },
+      ];
     } else {
       throw new Error(`Unsupported resource type for Lambda: ${arn.resourceType}`);
     }
@@ -46,7 +63,8 @@ export class LambdaServiceProvider extends ServiceProvider {
   }
 
   protected resourceTypes: Record<string, [string, string]> = {
-    'function': ['Function', 'Functions']
+    'function': ['Function', 'Functions'],
+    'event-source-mapping': ['Event Source Mapping', 'Event Source Mappings']
   };
 
   getId(): string {
