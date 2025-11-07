@@ -1,4 +1,4 @@
-import { CloudFormationClient, DescribeStacksCommand, ListStacksCommand, ListStacksCommandOutput, StackStatus, StackSummary } from "@aws-sdk/client-cloudformation";
+import { CloudFormationClient, DescribeStacksCommand, ListStackResourcesCommand, ListStacksCommand, ListStacksCommandOutput, StackStatus, StackSummary } from "@aws-sdk/client-cloudformation";
 import { memoize } from "../shared/memoize";
 import ARN from "../models/arnModel";
 import { InternalError } from "../shared/errors";
@@ -66,5 +66,26 @@ export class CloudFormation {
     } else {
       throw new InternalError(`No stack found with name: ${arn.resourceName}`);
     }
+  }
+
+  /**
+   * Invoke the listStackResources API call.
+   */
+  public static async listStackResources(profile: string, arn: ARN) {
+    const client = this.cachedGetCloudFormationClient(profile, arn.region);
+
+    const resources: any[] = [];
+    let nextToken: string | undefined = undefined;
+
+    do {
+      const command: ListStackResourcesCommand = new ListStackResourcesCommand({ StackName: arn.resourceName, NextToken: nextToken });
+      const response = await client.send(command);
+      if (response.StackResourceSummaries) {
+        resources.push(...response.StackResourceSummaries);
+      }
+      nextToken = response.NextToken;
+    } while (nextToken);
+
+    return resources;
   }
 }
