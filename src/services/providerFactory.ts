@@ -8,6 +8,7 @@ import { LambdaServiceProvider } from "./lambda/provider";
 import { ServiceProvider } from "./serviceProvider";
 import { CloudFormationServiceProvider } from './cloudformation/provider';
 import { IAMServiceProvider } from './iam/provider';
+import { SqsServiceProvider } from './sqs/provider';
 
 /**
  * A factory for providing access to AWS service providers.
@@ -17,6 +18,11 @@ export class ProviderFactory {
    * Mapping of AWS service IDs to their providers.
    */
   private static providers: Map<string, ServiceProvider>;
+
+  /**
+   * Sorted array of providers (same as providers map, but sorted by name).
+   */
+  private static providersArray: ServiceProvider[];
 
   /**
    * Initialize the ProviderFactory so it's able to provide service provider
@@ -29,8 +35,13 @@ export class ProviderFactory {
       ['iam', new IAMServiceProvider(context)],
       ['lambda', new LambdaServiceProvider(context)],
       ['sns', new SnsServiceProvider(context)],
+      ['sqs', new SqsServiceProvider(context)],
       ['states', new StatesServiceProvider(context)],
     ]);
+    
+    ProviderFactory.providersArray = Array.from(ProviderFactory.providers.values()).sort((a, b) => {
+      return a.getName().localeCompare(b.getName());
+    });
   };
 
   /**
@@ -54,6 +65,6 @@ export class ProviderFactory {
    * (display) order.
    */
   public static getSupportedServices(): ServiceProvider[] {
-    return Object.values(ProviderFactory.providers);
+    return ProviderFactory.providersArray;
   }
 }
