@@ -16,21 +16,21 @@ export class ProviderFactory {
   /**
    * Mapping of AWS service IDs to their providers.
    */
-  private static providers: { [key: string]: ServiceProvider };
+  private static providers: Map<string, ServiceProvider>;
 
   /**
    * Initialize the ProviderFactory so it's able to provide service provider
    * instances.
    */
   public static initialize(context: vscode.ExtensionContext) {
-    ProviderFactory.providers = {
-      'cloudformation': new CloudFormationServiceProvider(context),
-      'dynamodb': new DynamoDBServiceProvider(context),
-      'iam': new IAMServiceProvider(context),
-      'lambda': new LambdaServiceProvider(context),
-      'sns': new SnsServiceProvider(context),
-      'states': new StatesServiceProvider(context),
-    };
+    ProviderFactory.providers = new Map<string, ServiceProvider>([
+      ['cloudformation', new CloudFormationServiceProvider(context)],
+      ['dynamodb', new DynamoDBServiceProvider(context)],
+      ['iam', new IAMServiceProvider(context)],
+      ['lambda', new LambdaServiceProvider(context)],
+      ['sns', new SnsServiceProvider(context)],
+      ['states', new StatesServiceProvider(context)],
+    ]);
   };
 
   /**
@@ -42,7 +42,7 @@ export class ProviderFactory {
    * @returns The service provider for the given service ID.
    */
   public static getProviderForService(id: string): ServiceProvider {
-    const provider = ProviderFactory.providers[id];
+    const provider = ProviderFactory.providers.get(id);
     if (!provider) {
       throw new InternalError(`Unhandled service: ${id}`);
     }

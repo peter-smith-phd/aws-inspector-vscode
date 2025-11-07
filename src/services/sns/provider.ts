@@ -1,6 +1,7 @@
+import { StackResourceSummary } from "@aws-sdk/client-cloudformation";
 import { Sns } from "../../awsClients/sns";
 import ARN from "../../models/arnModel";
-import { FieldType, ServiceProvider } from "../serviceProvider";
+import { FieldType, ServiceProvider, ServiceResourceArnTuple } from "../serviceProvider";
 
 export class SnsServiceProvider extends ServiceProvider {
 
@@ -28,6 +29,10 @@ export class SnsServiceProvider extends ServiceProvider {
       { field: "Policy", value: attributes.Policy || 'N/A', type: FieldType.JSON },
       { field: "Effective Delivery Policy", value: attributes.EffectiveDeliveryPolicy || 'N/A', type: FieldType.JSON }
     ];
+  }
+
+  public getArnForCloudFormationResource(resourceTypeName: string, cfnResource: StackResourceSummary): ServiceResourceArnTuple {
+    throw new Error(`Unsupported SNS resource type: ${resourceTypeName}`);
   }
 
   protected resourceTypes: Record<string, [string, string]> = {

@@ -1,8 +1,8 @@
 import { SFNClient, ListActivitiesCommand, ListStateMachinesCommand } from "@aws-sdk/client-sfn";
-import { FieldType, ServiceProvider } from "../serviceProvider";
+import { FieldType, ServiceProvider, ServiceResourceArnTuple } from "../serviceProvider";
 import { States } from "../../awsClients/states";
 import ARN from "../../models/arnModel";
-import { de } from "zod/v4/locales/index.cjs";
+import { StackResourceSummary } from "@aws-sdk/client-cloudformation";
 
 export class StatesServiceProvider extends ServiceProvider {
 
@@ -49,6 +49,10 @@ export class StatesServiceProvider extends ServiceProvider {
     } else {
       throw new Error(`Unknown resource type for ARN: ${arn.toString()}`);
     }
+  }
+
+  public getArnForCloudFormationResource(resourceTypeName: string, cfnResource: StackResourceSummary): ServiceResourceArnTuple {
+    throw new Error(`Unsupported Step Functions resource type: ${resourceTypeName}`);
   }
 
   protected resourceTypes: Record<string, [string, string]> = {

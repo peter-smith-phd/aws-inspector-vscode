@@ -1,6 +1,7 @@
+import { StackResourceSummary } from "@aws-sdk/client-cloudformation";
 import { IAM } from "../../awsClients/iam";
 import ARN from "../../models/arnModel";
-import { FieldType, ServiceProvider } from "../serviceProvider";
+import { FieldType, ServiceProvider, ServiceResourceArnTuple } from "../serviceProvider";
 
 export class IAMServiceProvider extends ServiceProvider {
   
@@ -35,6 +36,10 @@ export class IAMServiceProvider extends ServiceProvider {
     } else {
       throw new Error(`Unknown resource type for ARN: ${arn.toString()}`);
     }
+  }
+
+  public getArnForCloudFormationResource(resourceTypeName: string, cfnResource: StackResourceSummary): ServiceResourceArnTuple {
+    throw new Error(`Unsupported IAM resource type: ${resourceTypeName}`);
   }
 
   protected resourceTypes: Record<string, [string, string]> = {

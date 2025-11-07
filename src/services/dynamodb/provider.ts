@@ -1,7 +1,8 @@
 import { ta } from "zod/v4/locales/index.cjs";
 import { DynamoDB } from "../../awsClients/dynamodb";
 import ARN from "../../models/arnModel";
-import { FieldType, ServiceProvider } from "../serviceProvider";
+import { FieldType, ServiceProvider, ServiceResourceArnTuple } from "../serviceProvider";
+import { StackResourceSummary } from "@aws-sdk/client-cloudformation";
 
 export class DynamoDBServiceProvider extends ServiceProvider {
 
@@ -47,6 +48,10 @@ export class DynamoDBServiceProvider extends ServiceProvider {
     } else {
       throw new Error(`Unsupported resource type for DynamoDB: ${arn.resourceType}`);
     }
+  }
+
+  public getArnForCloudFormationResource(resourceTypeName: string, cfnResource: StackResourceSummary): ServiceResourceArnTuple {
+    throw new Error(`Unsupported DynamoDB resource type: ${resourceTypeName}`);
   }
 
   protected resourceTypes: Record<string, [string, string]> = {

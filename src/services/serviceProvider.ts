@@ -2,6 +2,7 @@ import { InternalError } from "../shared/errors";
 import * as vscode from 'vscode';
 import * as path from 'path';
 import ARN from "../models/arnModel";
+import { Stack, StackResourceSummary } from "@aws-sdk/client-cloudformation";
 
 /** 
  * Supported field types for resource descriptions. The type indicates
@@ -16,6 +17,15 @@ export enum FieldType {
     JSON = 'json', /* can be shown in an editor with JSON syntax highlighting */
     NUMBER = 'number', /* numeric value, e.g. count of resources */
     LOG_GROUP = 'logGroup' /* can be hyperlinked to CloudWatch Logs */
+};
+
+/**
+ * Used in various places to unique identify a service/resource/ARN combination
+ */
+export type ServiceResourceArnTuple = {
+  serviceId: string;
+  resourceType: string;
+  arn: string;
 };
 
 /**
@@ -46,6 +56,9 @@ export abstract class ServiceProvider {
 
   /** return the fields associated with the resource, to appear in the Resource Details view */
   abstract describeResource(profile: string, arn: ARN): Promise<{ field: string; value: string; type: FieldType }[]>;
+
+  /** Given a CloudFormation resource record, compute the corresponding ARN */
+  abstract getArnForCloudFormationResource(resourceTypeName: string, cfnResource: StackResourceSummary): ServiceResourceArnTuple;
 
   /** return the resource type names [singular, plural] for this AWS service */
   public getResourceTypeNames(resourceType: string): string[] {

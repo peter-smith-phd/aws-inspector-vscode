@@ -1,6 +1,7 @@
+import { StackResourceSummary } from "@aws-sdk/client-cloudformation";
 import { Lambda } from "../../awsClients/lambda";
 import ARN from "../../models/arnModel";
-import { FieldType, ServiceProvider } from "../serviceProvider";
+import { FieldType, ServiceProvider, ServiceResourceArnTuple } from "../serviceProvider";
 
 export class LambdaServiceProvider extends ServiceProvider {
   
@@ -39,48 +40,10 @@ export class LambdaServiceProvider extends ServiceProvider {
       throw new Error(`Unsupported resource type for Lambda: ${arn.resourceType}`);
     }
   }
-  /*
-"Configuration": {
-        "FunctionName": "sqs-lambda-stack-ProcessorFunction-HRaXXljiO96B",
-        "FunctionArn": "arn:aws:lambda:ap-southeast-2:354918407227:function:sqs-lambda-stack-ProcessorFunction-HRaXXljiO96B",
-        "Runtime": "python3.13",
-        "Role": "arn:aws:iam::354918407227:role/sqs-lambda-stack-ProcessorFunctionRole-Y5z4ROokNnzm",
-        "Handler": "app.lambda_handler",
-        "CodeSize": 416,
-        "Description": "",
-        "Timeout": 3,
-        "MemorySize": 128,
-        "LastModified": "2025-08-18T17:56:22.454+0000",
-        "CodeSha256": "55v95x1oXjQEAwOfhkQQTRxSpEEXz8JnDsUvK9jCe4g=",
-        "Version": "$LATEST",
-        "DeadLetterConfig": {
-            "TargetArn": "arn:aws:sqs:ap-southeast-2:354918407227:sqs-lambda-stack-ProcessingDLQ-I5zmIEbmTJBk"
-        },
-        "TracingConfig": {
-            "Mode": "PassThrough"
-        },
-        "RevisionId": "291b16bc-e11f-4408-8618-49fb1a10808a",
-        "State": "Active",
-        "LastUpdateStatus": "Successful",
-        "PackageType": "Zip",
-        "Architectures": [
-            "arm64"
-        ],
-        "EphemeralStorage": {
-            "Size": 512
-        },
-        "SnapStart": {
-            "ApplyOn": "None",
-            "OptimizationStatus": "Off"
-        },
-        "RuntimeVersionConfig": {
-            "RuntimeVersionArn": "arn:aws:lambda:ap-southeast-2::runtime:2a7584173d2507ead35fecec5cb4db34186308ee06a9f8add526a8bf72f80f2d"
-        },
-        "LoggingConfig": {
-            "LogFormat": "Text",
-            "LogGroup": "/aws/lambda/sqs-lambda-stack-ProcessorFunction-HRaXXljiO96B"
-        }
-  */
+
+  public getArnForCloudFormationResource(resourceTypeName: string, cfnResource: StackResourceSummary): ServiceResourceArnTuple {
+    throw new Error(`Unsupported Lambda resource type: ${resourceTypeName}`);
+  }
 
   protected resourceTypes: Record<string, [string, string]> = {
     'function': ['Function', 'Functions']

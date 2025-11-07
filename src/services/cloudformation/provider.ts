@@ -1,7 +1,7 @@
-import { StackSummary } from "@aws-sdk/client-cloudformation";
+import { StackResourceSummary, StackSummary } from "@aws-sdk/client-cloudformation";
 import { CloudFormation } from "../../awsClients/cloudformation";
 import ARN from "../../models/arnModel";
-import { FieldType, ServiceProvider } from "../serviceProvider";
+import { FieldType, ServiceProvider, ServiceResourceArnTuple } from "../serviceProvider";
 
 export class CloudFormationServiceProvider extends ServiceProvider {
   
@@ -48,6 +48,10 @@ export class CloudFormationServiceProvider extends ServiceProvider {
     } else {
       throw new Error(`Unknown resource type for ARN: ${arn.toString()}`);
     }
+  }
+
+  public getArnForCloudFormationResource(resourceTypeName: string, cfnResource: StackResourceSummary): ServiceResourceArnTuple {
+    throw new Error(`Unsupported CloudFormation resource type: ${resourceTypeName}`);
   }
 
   protected resourceTypes: Record<string, [string, string]> = {
