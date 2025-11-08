@@ -58,8 +58,17 @@ export class LambdaServiceProvider extends ServiceProvider {
     }
   }
 
-  public getArnForCloudFormationResource(resourceTypeName: string, cfnResource: StackResourceSummary): ServiceResourceArnTuple {
-    throw new Error(`Unsupported Lambda resource type: ${resourceTypeName}`);
+  public getArnResourceNameForCloudFormationResource(
+    stackResourceSummary: StackResourceSummary
+  ): { resourceType: string; resourceName: string; } {
+    const resourceType = stackResourceSummary.ResourceType!;
+    if (resourceType === 'AWS::Lambda::Function') {
+      return { resourceType: 'function', resourceName: `function:${stackResourceSummary.PhysicalResourceId!}` };
+    } else if (resourceType === 'AWS::Lambda::EventSourceMapping') {
+      return { resourceType: 'event-source-mapping', resourceName: `event-source-mapping:${stackResourceSummary.PhysicalResourceId!}` };
+    } else {
+      throw new Error(`Unsupported Lambda resource type: ${resourceType}`);
+    }
   }
 
   protected resourceTypes: Record<string, [string, string]> = {

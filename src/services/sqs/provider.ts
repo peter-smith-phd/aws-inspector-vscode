@@ -36,8 +36,14 @@ export class SqsServiceProvider extends ServiceProvider {
     ];
   }
 
-  public getArnForCloudFormationResource(resourceTypeName: string, cfnResource: StackResourceSummary): ServiceResourceArnTuple {
-    throw new Error(`Unsupported SQS resource type: ${resourceTypeName}`);
+  public getArnResourceNameForCloudFormationResource(
+    stackResourceSummary: StackResourceSummary
+  ): { resourceType: string; resourceName: string; } {
+    const resourceType = stackResourceSummary.ResourceType;
+    if (resourceType !== 'AWS::SQS::Queue') {
+      throw new Error(`Unsupported resource type for SQS service: ${resourceType}`);
+    }
+    return { resourceType: 'queue', resourceName: stackResourceSummary.PhysicalResourceId!.split('/').pop()! };
   }
 
   protected resourceTypes: Record<string, [string, string]> = {

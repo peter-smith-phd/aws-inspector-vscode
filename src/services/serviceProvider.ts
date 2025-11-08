@@ -45,22 +45,36 @@ export abstract class ServiceProvider {
    */
   protected abstract resourceTypes: Record<string, [string, string]>;
 
-  /** Provide the ID of the AWS service managed by this provider */
+  /** 
+   * Provide the ID of the AWS service managed by this provider
+   */
   abstract getId(): string;
 
-  /** return the human-readable name of this AWS service. */
+  /**
+   * Return the human-readable name of this AWS service.
+   */
   abstract getName(): string;
 
-  /** return the ARNs associated with the resource type */
+  /**
+   * Return the ARNs associated with the resource type
+   */
   abstract getResourceArns(profile: string, region: string, resourceType: string): Promise<string[]>;
 
-  /** return the fields associated with the resource, to appear in the Resource Details view */
+  /**
+   * Return the fields associated with the resource, to appear in the Resource Details view
+   */
   abstract describeResource(profile: string, arn: ARN): Promise<{ field: string; value: string; type: FieldType }[]>;
 
-  /** Given a CloudFormation resource record, compute the corresponding ARN */
-  abstract getArnForCloudFormationResource(resourceTypeName: string, cfnResource: StackResourceSummary): ServiceResourceArnTuple;
+  /** 
+   * Given a CloudFormation resource record, compute the corresponding ARN resource name 
+   */
+  abstract getArnResourceNameForCloudFormationResource(
+    stackResourceSummary: StackResourceSummary
+  ): {resourceType: string, resourceName: string};
 
-  /** return the resource type names [singular, plural] for this AWS service */
+  /**
+   * Return the resource type names [singular, plural] for this AWS service
+   */
   public getResourceTypeNames(resourceType: string): string[] {
     const resourceTypeNames = this.resourceTypes[resourceType];
     if (!resourceTypeNames) {
@@ -77,7 +91,9 @@ export abstract class ServiceProvider {
     return Object.keys(this.resourceTypes);
   }
 
-  /** return the relevant icon path for this AWS service. */
+  /**
+   * Return the relevant icon path for this AWS service.
+   */
   public getIconPath(serviceId: string): string {
     // TODO: return both light and dark variants.
     return path.join(this.context.extensionPath, 'resources', 'icons', 'services', `${serviceId}.svg`);

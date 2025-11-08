@@ -38,8 +38,15 @@ export class IAMServiceProvider extends ServiceProvider {
     }
   }
 
-  public getArnForCloudFormationResource(resourceTypeName: string, cfnResource: StackResourceSummary): ServiceResourceArnTuple {
-    throw new Error(`Unsupported IAM resource type: ${resourceTypeName}`);
+  public getArnResourceNameForCloudFormationResource(
+    stackResourceSummary: StackResourceSummary
+  ): { resourceType: string; resourceName: string; } {
+    const resourceType = stackResourceSummary.ResourceType;
+    if (resourceType === 'AWS::IAM::Role') {
+      return { resourceType: 'role', resourceName: `role/${stackResourceSummary.PhysicalResourceId!}` };
+    } else {
+      throw new Error(`Unsupported IAM resource type: ${resourceType}`);
+    }
   }
 
   protected resourceTypes: Record<string, [string, string]> = {

@@ -31,8 +31,10 @@ export class SnsServiceProvider extends ServiceProvider {
     ];
   }
 
-  public getArnForCloudFormationResource(resourceTypeName: string, cfnResource: StackResourceSummary): ServiceResourceArnTuple {
-    throw new Error(`Unsupported SNS resource type: ${resourceTypeName}`);
+  public getArnResourceNameForCloudFormationResource(
+    stackResourceSummary: StackResourceSummary
+  ): { resourceType: string; resourceName: string; } {
+    throw new Error(`Unsupported SNS resource type: ${stackResourceSummary.ResourceType}`);
   }
 
   protected resourceTypes: Record<string, [string, string]> = {
