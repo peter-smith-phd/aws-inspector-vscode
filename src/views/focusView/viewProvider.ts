@@ -18,6 +18,8 @@ import { Focus, loadStandardModel, StandardModel } from '../../models/focusModel
 import { Account } from '../../awsClients/account';
 import { getRegionLongName } from '../../models/regionModel';
 import { CloudFormation } from '../../awsClients/cloudformation';
+import CfnStackModel from '../../models/cfnStackModel';
+import ARN from '../../models/arnModel';
 
 /**
  * Provider for a view allowing the user to focus on what they want to see in the "Resources"
@@ -111,9 +113,8 @@ export class FocusViewProvider implements vscode.TreeDataProvider<FocusTreeItem>
             }
             return stacks.map(stack => {
                 // TODO: compute the actual focus for this stack
-                return new FocusSelectableTreeItem(stack.StackName!, () => {
-                    console.log(`Loading focus for stack ${stack.StackName}`);
-                    return Promise.resolve(undefined) as unknown as Promise<Focus>;
+                return new FocusSelectableTreeItem(stack.StackName!, async () => {
+                    return await new CfnStackModel(parent.profileName, new ARN(stack.StackId!)).toFocusModel();
                 });
             });
         });
